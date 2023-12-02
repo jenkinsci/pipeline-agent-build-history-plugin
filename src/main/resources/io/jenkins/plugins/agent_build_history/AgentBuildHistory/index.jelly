@@ -1,0 +1,52 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" >
+  <l:layout title="${%Extended Build History}">
+    <st:include page="sidepanel.jelly" it="${it.getComputer()}"/>
+    <l:main-panel>
+      <template id="jenkins-build-status-icons">
+        <l:icon src="symbol-status-blue" id="blue" />
+        <l:icon src="symbol-status-blue-anime" id="blue-anime" />
+        <l:icon src="symbol-status-yellow" id="yellow" />
+        <l:icon src="symbol-status-yellow-anime" id="yellow-anime" />
+        <l:icon src="symbol-status-red" id="red" />
+        <l:icon src="symbol-status-red-anime" id="red-anime" />
+        <l:icon src="symbol-status-nobuilt" id="nobuilt" />
+        <l:icon src="symbol-status-nobuilt-anime" id="nobuilt-anime" />
+        <l:icon src="symbol-status-aborted" id="aborted" />
+        <l:icon src="symbol-status-aborted-anime" id="aborted-anime" />
+        <l:icon src="symbol-status-disabled" id="disabled" />
+        <l:icon src="symbol-status-disabled-anime" id="disabled-anime" />
+        <l:icon src="symbol-terminal" id="console" alt="${%Console output}"/>
+      </template>
+      <h1>
+        ${%Extended Build History}
+      </h1>
+      <p>
+        <em>${%disclaimer}</em>
+      </p>
+
+      <t:setIconSize/>
+      <st:adjunct includes="io.jenkins.plugins.agent_build_history.AgentBuildHistory.agentBuildHistory" />
+      <j:new var="handler" className="io.jenkins.plugins.agent_build_history.RunListTable" classLoader="${it.class.classLoader}"/>
+      ${handler.setRuns(it.executions)}
+      <l:progressiveRendering handler="${handler}" callback="abhDisplayExtendedBuildHistory"/>
+      <table class="jenkins-table ${iconSize == '16x16' ? 'jenkins-table--small' : iconSize == '24x24' ? 'jenkins-table--medium' : ''}"
+             id="projectStatus" style="display: none;" data-icon-size-class="${iconSizeClass}"
+             data-show-nodes-text="${%Show nodes}" data-hide-nodes-text="${%Hide nodes}">
+        <thead>
+          <tr>
+            <th class="jenkins-table__cell--tight abh-center">${%S}</th>
+            <th>${%Build}</th>
+            <th initialSortDir="up">${%Time Since}</th>
+            <th>${%Duration}</th>
+            <th>${%Status}</th>
+            <th class="jenkins-table__cell--tight" data-sort-disable="true"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <t:rssBar-with-iconSize/>
+
+    </l:main-panel>
+  </l:layout>
+</j:jelly>
