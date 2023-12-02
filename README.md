@@ -12,7 +12,7 @@ that was executed on that specific agent. It can also be due to a step on anothe
 A button is added behind the links to the run that allows to show all node steps executed on the agent. If any step
 inside the node steps closure failed the status is set to `Failure` and highlighted in red.
  
-Looking at the output of this simple pipeline, this will produce on the agent `mynode` the below lines
+Looking at the output of this simple pipeline 
 ```
 node('mynode') {
   sh 'Echo Hello' 
@@ -27,4 +27,5 @@ node('mynode') {
   ''' 
 }
 ```
+this will produce on the agent `mynode` the below lines
 ![img.png](docs/img.png)
