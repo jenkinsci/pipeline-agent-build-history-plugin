@@ -79,7 +79,6 @@ public class RunListTable extends ProgressiveRendering {
       JSONObject element = calculate(run, execution);
       String runId = functions.generateId();
       if (run instanceof WorkflowRun) {
-        run.getId();
         element.put("runId", runId);
       } else {
         element.put("runId", "");

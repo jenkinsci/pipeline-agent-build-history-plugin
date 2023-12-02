@@ -56,10 +56,30 @@ public class AgentExecution implements Comparable<AgentExecution> {
     return 0;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    AgentExecution execution = (AgentExecution) o;
+    return Objects.equals(run, execution.run);
+  }
 
   @Override
+  public int hashCode() {
+    return Objects.hash(run);
+  }
+
+  /*
+   * Ordering is based on the start time stamp. In the unlikely case two runs
+   * start in the same millisecond, sort by full display name
+   */
+  @Override
   public int compareTo(AgentExecution o) {
-    return -Long.compare(run.getStartTimeInMillis(), o.run.getStartTimeInMillis());
+    int compare = Long.compare(o.run.getStartTimeInMillis(), run.getStartTimeInMillis());
+    if (compare == 0) {
+      return o.run.getFullDisplayName().compareToIgnoreCase(run.getFullDisplayName());
+    }
+    return compare;
   }
 
   public class FlowNodeExecution implements Comparable<FlowNodeExecution> {
@@ -123,7 +143,11 @@ public class AgentExecution implements Comparable<AgentExecution> {
 
     @Override
     public int compareTo(FlowNodeExecution o) {
-      return -Long.compare(startTime, o.startTime);
+      int compare = Long.compare(o.startTime, startTime);
+      if (compare == 0) {
+        return nodeId.compareTo(o.nodeId);
+      }
+      return compare;
     }
 
     @Override
