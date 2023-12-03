@@ -55,6 +55,9 @@ public class AgentBuildHistory implements Action {
     loadExecutions(computer);
   }
 
+  /*
+   * used by jelly
+   */
   public Computer getComputer() {
     return computer;
   }
