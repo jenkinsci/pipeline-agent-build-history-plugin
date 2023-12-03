@@ -75,6 +75,9 @@ window.abhDisplayExtendedBuildHistory = function(data) {
       td2.appendChild(span2);
       tr.appendChild(td2);
 
+      let td3a = document.createElement("td");
+      tr.appendChild(td3a);
+
       let td3 = document.createElement("td");
       td3.setAttribute("data", e.startTime);
       td3.textContent = e.startTimeString;
@@ -143,15 +146,17 @@ window.abhDisplayExtendedBuildHistory = function(data) {
     a2.href = rootUrl + "/" + e.url;
     a2.textContent = e.displayName;
     td2.appendChild(a2);
+    tr.appendChild(td2);
+    let td3a = document.createElement("td");
     if (e.runId !== "") {
       tr.dataset.id = e.runId;
       let button = document.createElement("button");
       button.classList.add("jenkins-table__button", "jenkins-table__badge", "toggle-flow-nodes");
       button.textContent = table.dataset.showNodesText;
       button.dataset.hidden = "true";
-      td2.appendChild(button);
+      td3a.appendChild(button);
     }
-    tr.appendChild(td2);
+    tr.appendChild(td3a);
 
     let td3 = document.createElement("td");
     td3.setAttribute("data", e.timestampString2);

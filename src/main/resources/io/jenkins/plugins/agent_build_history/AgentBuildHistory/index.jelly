@@ -19,7 +19,7 @@
         <l:icon src="symbol-terminal" id="console" alt="${%Console output}"/>
       </template>
       <h1>
-        ${%Extended Build History}
+        ${%title(it.computer.displayName)}
       </h1>
       <p>
         <em>${%disclaimer}</em>
@@ -37,7 +37,8 @@
           <tr>
             <th class="jenkins-table__cell--tight abh-center">${%S}</th>
             <th>${%Build}</th>
-            <th initialSortDir="up">${%Time Since}</th>
+            <th/>
+            <th>${%Time Since}</th>
             <th>${%Duration}</th>
             <th>${%Status}</th>
             <th class="jenkins-table__cell--tight" data-sort-disable="true"></th>
