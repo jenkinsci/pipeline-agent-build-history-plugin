@@ -19,8 +19,8 @@ import jenkins.model.Jenkins;
 import jenkins.util.Timer;
 import org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
-import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
+import org.jenkinsci.plugins.workflow.graphanalysis.DepthFirstScanner;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.support.actions.WorkspaceActionImpl;
@@ -62,6 +62,12 @@ public class AgentBuildHistory implements Action {
     return computer;
   }
 
+  public RunListTable getHandler() {
+    RunListTable runListTable = new RunListTable();
+    runListTable.setRuns(getExecutions());
+    return  runListTable;
+  }
+
   private static void load(Computer computer) {
     Set<AgentExecution> executions = agentExecutions.get(computer);
     Node node = computer.getNode();
@@ -80,19 +86,15 @@ public class AgentBuildHistory implements Action {
         if (flowExecution != null) {
           AgentExecution execution = new AgentExecution(wfr);
           boolean matchesNode = false;
-          FlowGraphWalker walker = new FlowGraphWalker(flowExecution);
-          for (FlowNode flowNode : walker) {
-            if (flowNode instanceof StepStartNode) {
+          for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
+            for (WorkspaceActionImpl action : flowNode.getActions(WorkspaceActionImpl.class)) {
               StepStartNode startNode = (StepStartNode) flowNode;
               StepDescriptor descriptor = startNode.getDescriptor();
               if (descriptor instanceof ExecutorStep.DescriptorImpl) {
-                WorkspaceActionImpl action = flowNode.getAction(WorkspaceActionImpl.class);
-                if (action != null) {
-                  String nodeName = action.getNode();
-                  if (node.getNodeName().equals(nodeName)) {
-                    matchesNode = true;
-                    execution.addFlowNode(flowNode);
-                  }
+                String nodeName = action.getNode();
+                if (node.getNodeName().equals(nodeName)) {
+                  matchesNode = true;
+                  execution.addFlowNode(flowNode);
                 }
               }
             }
