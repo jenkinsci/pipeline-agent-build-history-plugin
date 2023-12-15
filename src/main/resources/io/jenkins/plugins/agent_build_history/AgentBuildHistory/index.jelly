@@ -26,7 +26,7 @@
       </p>
 
       <t:setIconSize/>
-      <st:adjunct includes="io.jenkins.plugins.agent_build_history.AgentBuildHistory.agentBuildHistory" />
+      <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
       <j:new var="handler" className="io.jenkins.plugins.agent_build_history.RunListTable" classLoader="${it.class.classLoader}"/>
       ${handler.setRuns(it.executions)}
       <l:progressiveRendering handler="${handler}" callback="abhDisplayExtendedBuildHistory"/>
