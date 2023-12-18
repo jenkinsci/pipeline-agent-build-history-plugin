@@ -27,9 +27,7 @@
 
       <t:setIconSize/>
       <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
-      <j:new var="handler" className="io.jenkins.plugins.agent_build_history.RunListTable" classLoader="${it.class.classLoader}"/>
-      ${handler.setRuns(it.executions)}
-      <l:progressiveRendering handler="${handler}" callback="abhDisplayExtendedBuildHistory"/>
+      <l:progressiveRendering handler="${it.handler}" callback="abhDisplayExtendedBuildHistory"/>
       <table class="jenkins-table ${iconSize == '16x16' ? 'jenkins-table--small' : iconSize == '24x24' ? 'jenkins-table--medium' : ''}"
              id="projectStatus" style="display: none;" data-icon-size-class="${iconSizeClass}"
              data-show-nodes-text="${%Show nodes}" data-hide-nodes-text="${%Hide nodes}">
