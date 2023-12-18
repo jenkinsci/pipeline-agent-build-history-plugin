@@ -1,0 +1,35 @@
+.abh-center {
+  text-align: center !important;
+}
+
+.abh-agent-list, .abh-label-list, .abh-duration-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.abh-trend {
+  display: flex;
+  column-gap: 20px;
+}
+
+.abh-job-history tbody>tr>td {
+  height: auto!important;
+}
+
+.abh-agent-list__button {
+  display: flex;
+  height: 24px;
+  align-items: center;
+}
+
+.abh-agent-list__button > button {
+  min-height: 20px;
+  max-height: 20px;
+  margin-left: 5px;
+  padding: 0.3rem 0.3rem;
+}
+
+.abh-agent-list__button[data-hidden=false] {
+    rotate: 180deg;
+}

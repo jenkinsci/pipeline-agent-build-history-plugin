@@ -1,0 +1,49 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout">
+  <l:layout title="${%Extended Build History}">
+    <st:include page="sidepanel.jelly" it="${it.job}"/>
+    <st:adjunct includes="hudson.model.Job.buildTimeTrend_resources" />
+    <l:main-panel>
+      <template id="jenkins-build-status-icons">
+        <l:icon src="symbol-status-blue" id="blue" />
+        <l:icon src="symbol-status-blue-anime" id="blue-anime" />
+        <l:icon src="symbol-status-yellow" id="yellow" />
+        <l:icon src="symbol-status-yellow-anime" id="yellow-anime" />
+        <l:icon src="symbol-status-red" id="red" />
+        <l:icon src="symbol-status-red-anime" id="red-anime" />
+        <l:icon src="symbol-status-nobuilt" id="nobuilt" />
+        <l:icon src="symbol-status-nobuilt-anime" id="nobuilt-anime" />
+        <l:icon src="symbol-status-aborted" id="aborted" />
+        <l:icon src="symbol-status-aborted-anime" id="aborted-anime" />
+        <l:icon src="symbol-status-disabled" id="disabled" />
+        <l:icon src="symbol-status-disabled-anime" id="disabled-anime" />
+        <l:icon src="symbol-terminal" id="console" alt="${%Console output}"/>
+        <l:icon src="symbol-chevron-down" id="chevron-down" alt="${%Show all Agents}"/>
+      </template>
+      <h1>${%Extended Build History}</h1>
+      <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
+      <l:progressiveRendering handler="${it.handler}" callback="abhBuildTimeTrend"/>
+      <div class="abh-trend">
+        <table class="jenkins-table jenkins-table--small sortable abh-job-history" id="trend" style="width: auto;"
+               data-show-agents-text="${%Show all agents}" data-hide-agents-text="${%Hide all agents}"
+               data-no-label="${%No Label}">
+          <thead>
+          <tr>
+            <th class="jenkins-table__cell--tight abh-center">${%S}</th>
+            <th initialSortDir="up">${%Build}</th>
+            <th>${%Time Since}</th>
+            <th tooltip="${%Overall Build duration}">${%Duration}</th>
+            <th data-sort-disable="true">${%Agents}</th>
+            <th data-sort-disable="true" tooltip="${%The label expression used to select the agent}">${%Labels}</th>
+            <th data-sort-disable="true" tooltip="${%The duration of the specific node step on the agent}">${%Agent Duration}</th>
+            <th/>
+            <th/>
+          </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <img src="../buildTimeGraph/png" width="500" height="400" lazymap="../buildTimeGraph/map" alt="[${%Build time graph}]" />
+      </div>
+    </l:main-panel>
+  </l:layout>
+</j:jelly>
