@@ -23,6 +23,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.support.actions.WorkspaceActionImpl;
 import org.jenkinsci.plugins.workflow.support.steps.ExecutorStep;
+import org.kohsuke.accmod.restrictions.suppressions.SuppressRestrictedWarnings;
 
 public class WorkflowJobTrend extends ProgressiveRendering {
     /**
@@ -59,6 +60,7 @@ public class WorkflowJobTrend extends ProgressiveRendering {
         return d;
     }
 
+    @SuppressRestrictedWarnings({ArgumentsActionImpl.class, hudson.model.Messages.class})
     private void calculate(WorkflowRun run, JSONObject element) {
         BallColor iconColor = run.getIconColor();
         element.put("iconName", iconColor.getIconName());
