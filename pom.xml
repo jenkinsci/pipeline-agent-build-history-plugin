@@ -43,7 +43,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-weekly</artifactId>
-        <version>2661.vb_b_60650f6d97</version>
+<!-- should default to jenkins.version if not hardcoded        <version>${project.version}</version> -->
         <type>pom</type>
         <scope>import</scope>
       </dependency>
