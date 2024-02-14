@@ -13,6 +13,10 @@
   column-gap: 20px;
 }
 
+.abh-job-history {
+  height: fit-content;
+}
+
 .abh-job-history tbody>tr>td {
   height: auto!important;
 }
