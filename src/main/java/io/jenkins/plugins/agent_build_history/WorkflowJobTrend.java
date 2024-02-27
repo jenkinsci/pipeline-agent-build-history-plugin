@@ -78,6 +78,9 @@ public class WorkflowJobTrend extends ProgressiveRendering {
         FlowExecution flowExecution = run.getExecution();
         if (flowExecution != null) {
             for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
+                if (! (flowNode instanceof StepStartNode)) {
+                  continue;
+                }
                 JSONObject n = new JSONObject();
                 WorkspaceActionImpl action = flowNode.getAction(WorkspaceActionImpl.class);
                 if (action != null) {

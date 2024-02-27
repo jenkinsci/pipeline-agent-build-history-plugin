@@ -87,6 +87,9 @@ public class AgentBuildHistory implements Action {
           AgentExecution execution = new AgentExecution(wfr);
           boolean matchesNode = false;
           for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
+            if (! (flowNode instanceof StepStartNode)) {
+              continue;
+            }
             for (WorkspaceActionImpl action : flowNode.getActions(WorkspaceActionImpl.class)) {
               StepStartNode startNode = (StepStartNode) flowNode;
               StepDescriptor descriptor = startNode.getDescriptor();
