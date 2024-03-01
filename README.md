@@ -29,7 +29,7 @@ node('mynode') {
 }
 ```
 this will produce on the agent `mynode` the below lines
-![img.png](docs/img.png)
+![agent-history.png](docs/agent-history.png)
 
 
 ## Job History
