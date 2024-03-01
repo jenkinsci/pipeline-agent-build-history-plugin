@@ -17,6 +17,7 @@
         <l:icon src="symbol-status-disabled" id="disabled" />
         <l:icon src="symbol-status-disabled-anime" id="disabled-anime" />
         <l:icon src="symbol-terminal" id="console" alt="${%Console output}"/>
+        <l:icon src="symbol-chevron-down" id="chevron-down" alt="${%Show all Agents}"/>
       </template>
       <h1>
         ${%title(it.computer.displayName)}
@@ -28,24 +29,23 @@
       <t:setIconSize/>
       <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
       <l:progressiveRendering handler="${it.handler}" callback="abhDisplayExtendedBuildHistory"/>
-      <table class="jenkins-table ${iconSize == '16x16' ? 'jenkins-table--small' : iconSize == '24x24' ? 'jenkins-table--medium' : ''}"
-             id="projectStatus" style="display: none;" data-icon-size-class="${iconSizeClass}"
-             data-show-nodes-text="${%Show nodes}" data-hide-nodes-text="${%Hide nodes}">
+      <table class="jenkins-table sortable ${iconSize == '16x16' ? 'jenkins-table--small' : iconSize == '24x24' ? 'jenkins-table--medium' : ''}"
+             id="projectStatus" style="display: none; width: auto;" data-icon-size-class="${iconSizeClass}"
+             data-show-text="${%Show nodes}" data-hide-text="${%Hide nodes}" >
         <thead>
           <tr>
             <th class="jenkins-table__cell--tight abh-center">${%S}</th>
             <th>${%Build}</th>
-            <th/>
             <th>${%Time Since}</th>
             <th>${%Duration}</th>
             <th>${%Status}</th>
+            <th data-sort-disable="true"/>
             <th class="jenkins-table__cell--tight" data-sort-disable="true"></th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
       <t:rssBar-with-iconSize/>
-
     </l:main-panel>
   </l:layout>
 </j:jelly>

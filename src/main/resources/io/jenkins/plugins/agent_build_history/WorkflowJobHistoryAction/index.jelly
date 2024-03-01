@@ -25,7 +25,7 @@
       <l:progressiveRendering handler="${it.handler}" callback="abhBuildTimeTrend"/>
       <div class="abh-trend">
         <table class="jenkins-table jenkins-table--small sortable abh-job-history" id="trend" style="width: auto;"
-               data-show-agents-text="${%Show all agents}" data-hide-agents-text="${%Hide all agents}"
+               data-show-text="${%Show all agents}" data-hide-text="${%Hide all agents}"
                data-no-label="${%No Label}">
           <thead>
           <tr>
