@@ -18,9 +18,14 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 @Restricted(NoExternalUse.class)
 public class RunListTable extends ProgressiveRendering {
 
+  String computerName;
   private static final double MAX_LIKELY_RUNS = 20;
   private Iterable<AgentExecution> runs;
   private final List<JSONObject> results = new ArrayList<>();
+
+  public RunListTable(String computerName) {
+    this.computerName = computerName;
+  }
 
   public void setRuns(Iterable<AgentExecution> runs) {
     this.runs = runs;
@@ -48,7 +53,9 @@ public class RunListTable extends ProgressiveRendering {
     JSONArray flowNodes = new JSONArray();
     if (run instanceof WorkflowRun) {
       for (AgentExecution.FlowNodeExecution nodeExec: execution.getFlowNodes()) {
-        flowNodes.add(calculateFlowNode(nodeExec));
+        if (nodeExec.getNodeName().equals(computerName)) {
+          flowNodes.add(calculateFlowNode(nodeExec));
+        }
       }
     }
     element.put("flowNodes", flowNodes);
