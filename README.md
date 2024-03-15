@@ -31,6 +31,13 @@ node('mynode') {
 this will produce on the agent `mynode` the below lines
 ![agent-history.png](docs/agent-history.png)
 
+:warning: 
+**Note** The plugin internally caches the usage of agents by jobs. Initially the usage of agents from finished runs is 
+not loaded. When the extended build history page for agents is accessed the first time (it doesn't matter for which agent), 
+the page will only contain those runs that have used an agent since Jenkins was started. At that time a background thread
+starts and the plugin will load the complete history of all jobs. This can be time and memory consuming. The next time the 
+extended build history page of an agent is accessed it should contain the complete history.
+
 
 ## Job History
 Similarly, the `Trend` page of a pipeline job is not able to show information about the agents that have been used in

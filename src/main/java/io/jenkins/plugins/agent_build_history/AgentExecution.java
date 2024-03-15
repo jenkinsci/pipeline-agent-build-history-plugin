@@ -36,8 +36,8 @@ public class AgentExecution implements Comparable<AgentExecution> {
     return run;
   }
 
-  public void addFlowNode(FlowNode node) {
-    FlowNodeExecution exec = new FlowNodeExecution(node.getId());
+  public void addFlowNode(FlowNode node, String nodeName) {
+    FlowNodeExecution exec = new FlowNodeExecution(node.getId(), nodeName);
     flowNodes.add(exec);
   }
 
@@ -86,10 +86,12 @@ public class AgentExecution implements Comparable<AgentExecution> {
     private final String nodeId;
     private Status status;
 
+    private String nodeName;
     private final long startTime;
 
-    public FlowNodeExecution(String nodeId) {
+    public FlowNodeExecution(String nodeId, String nodeName) {
       this.nodeId = nodeId;
+      this.nodeName = nodeName;
       startTime = AgentExecution.getNodeTime(getStartNode());
     }
 
@@ -165,6 +167,10 @@ public class AgentExecution implements Comparable<AgentExecution> {
 
     public String getNodeId() {
       return nodeId;
+    }
+
+    public String getNodeName() {
+      return nodeName;
     }
 
     public Status getFlowNodeStatus() {
