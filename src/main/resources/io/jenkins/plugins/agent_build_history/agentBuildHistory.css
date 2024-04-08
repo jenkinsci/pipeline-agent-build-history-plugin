@@ -36,3 +36,7 @@
 .abh-list__button button[data-hidden=false] {
     rotate: 180deg;
 }
+
+.abh-not-loaded {
+  background: var(--error-color)!important;
+}

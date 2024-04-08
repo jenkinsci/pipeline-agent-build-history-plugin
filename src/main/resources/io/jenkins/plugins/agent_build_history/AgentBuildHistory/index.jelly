@@ -22,10 +22,14 @@
       <h1>
         ${%title(it.computer.displayName)}
       </h1>
-        <div class="tr jenkins-!-margin-bottom-3">
-          <em>${%disclaimer}</em><a tooltip="${%Missing some runs?}" helpurl="/jenkins/plugin/pipeline-agent-build-history/help/hint.html" href="#" class="jenkins-help-button" tabindex="9999"><span>?</span></a>
-        </div>
-        <div class="help-area tr" style="max-width: 750px;"><div class="help"><p class="jenkins-spinner">Loading...</p></div></div>
+      <div class="tr jenkins-!-margin-bottom-3">
+        <em>${%disclaimer}</em>
+        <j:if test="${!it.loadingComplete}">
+          <a tooltip="${%History loading still ongoing}" helpurl="${rootURL}/plugin/pipeline-agent-build-history/help/hint.html" href="#" class="jenkins-help-button" tabindex="9999">
+          <span class="abh-not-loaded">?</span></a>
+        </j:if>
+      </div>
+      <div class="help-area tr" style="max-width: 750px;"><div class="help"><p class="jenkins-spinner">Loading...</p></div></div>
 
       <t:setIconSize/>
       <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />

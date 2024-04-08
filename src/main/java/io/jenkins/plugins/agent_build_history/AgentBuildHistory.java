@@ -44,6 +44,8 @@ public class AgentBuildHistory implements Action {
   private final Computer computer;
 
   private static boolean loaded = false;
+  
+  private static boolean loadingComplete = false;
 
   @Extension
   public static class HistoryRunListener extends RunListener<Run<?, ?>> {
@@ -75,6 +77,10 @@ public class AgentBuildHistory implements Action {
    */
   public Computer getComputer() {
     return computer;
+  }
+
+  public boolean isLoadingComplete() {
+    return loadingComplete;
   }
 
   @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
@@ -122,6 +128,7 @@ public class AgentBuildHistory implements Action {
         }
       }
     });
+    loadingComplete = true;
   }
 
   private static Set<AgentExecution> loadExecutions(String computerName) {
