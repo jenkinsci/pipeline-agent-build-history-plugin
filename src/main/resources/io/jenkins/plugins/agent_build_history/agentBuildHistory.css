@@ -40,3 +40,9 @@
 .abh-not-loaded {
   background: var(--error-color)!important;
 }
+
+.abh-job-filter {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}

@@ -3,8 +3,7 @@ package io.jenkins.plugins.agent_build_history;
 import hudson.Util;
 import hudson.model.BallColor;
 import hudson.model.Node;
-import java.util.ArrayList;
-import java.util.List;
+import hudson.model.Result;
 import jenkins.console.ConsoleUrlProvider;
 import jenkins.model.Jenkins;
 import jenkins.util.ProgressiveRendering;
@@ -25,6 +24,9 @@ import org.jenkinsci.plugins.workflow.support.actions.WorkspaceActionImpl;
 import org.jenkinsci.plugins.workflow.support.steps.ExecutorStep;
 import org.kohsuke.accmod.restrictions.suppressions.SuppressRestrictedWarnings;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WorkflowJobTrend extends ProgressiveRendering {
     /**
      * Since we cannot predict how many runs there will be, just show an ever-growing progress bar.
@@ -34,9 +36,15 @@ public class WorkflowJobTrend extends ProgressiveRendering {
     private static final double MAX_LIKELY_RUNS = 20;
     private final List<JSONObject> results = new ArrayList<>();
     private final Iterable<? extends WorkflowRun> runs;
+    private final String statusFilter;
+    private final String agentFilter;
+    private final boolean filterByAgent;
 
-    public WorkflowJobTrend(Iterable<? extends WorkflowRun> runs) {
+    public WorkflowJobTrend(Iterable<? extends WorkflowRun> runs, String statusFilter, String agentFilter) {
         this.runs = runs;
+        this.statusFilter = statusFilter;
+        this.agentFilter = agentFilter;
+        this.filterByAgent = Util.fixEmptyAndTrim(agentFilter) != null;
     }
     @Override protected void compute() throws Exception {
         double decay = 1;
@@ -44,10 +52,27 @@ public class WorkflowJobTrend extends ProgressiveRendering {
             if (canceled()) {
                 return;
             }
+            Result result = run.getResult();
+            if (!"all".equals(statusFilter) && result != null) {
+              if ("success".equals(statusFilter) && result != Result.SUCCESS) {
+                continue;
+              }
+              if ("unstable".equals(statusFilter) && result != Result.UNSTABLE) {
+                continue;
+              }
+              if ("failure".equals(statusFilter) && result != Result.FAILURE) {
+                continue;
+              }
+              if ("aborted".equals(statusFilter) && result != Result.ABORTED) {
+                continue;
+              }
+            }
             JSONObject element = new JSONObject();
-            calculate(run, element);
-            synchronized (this) {
+            boolean include = calculate(run, element);
+            if (include) {
+              synchronized (this) {
                 results.add(element);
+              }
             }
             decay *= 1 - 1 / MAX_LIKELY_RUNS;
             progress(1 - decay);
@@ -61,7 +86,7 @@ public class WorkflowJobTrend extends ProgressiveRendering {
     }
 
     @SuppressRestrictedWarnings({ArgumentsActionImpl.class, hudson.model.Messages.class})
-    private void calculate(WorkflowRun run, JSONObject element) {
+    private boolean calculate(WorkflowRun run, JSONObject element) {
         BallColor iconColor = run.getIconColor();
         element.put("iconName", iconColor.getIconName());
         element.put("iconColorOrdinal", iconColor.ordinal());
@@ -76,6 +101,7 @@ public class WorkflowJobTrend extends ProgressiveRendering {
         element.put("timestampString2", run.getTimestampString2());
         JSONArray agents = new JSONArray();
         FlowExecution flowExecution = run.getExecution();
+        boolean include = !filterByAgent;
         if (flowExecution != null) {
             for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
                 if (! (flowNode instanceof StepStartNode)) {
@@ -89,13 +115,22 @@ public class WorkflowJobTrend extends ProgressiveRendering {
                     if (descriptor instanceof ExecutorStep.DescriptorImpl) {
                         String nodeName = action.getNode();
                         if (nodeName.equals("")) {
+                            if (filterByAgent && agentFilter.equals("built-in")) {
+                                include = true;
+                            }
                             n.put("builtOnStr", hudson.model.Messages.Hudson_Computer_DisplayName());
                         } else {
                             Node node = Jenkins.get().getNode(nodeName);
                             if (node != null) {
+                                if (filterByAgent && agentFilter.equals(node.getNodeName())) {
+                                    include = true;
+                                }
                                 n.put("builtOn", node.getNodeName());
                                 n.put("builtOnStr", node.getDisplayName());
                             } else {
+                                if (filterByAgent && agentFilter.equals(nodeName)) {
+                                    include = true;
+                                }
                                 n.put("builtOnStr", nodeName);
                             }
                         }
@@ -114,6 +149,7 @@ public class WorkflowJobTrend extends ProgressiveRendering {
             }
         }
         element.put("agents", agents);
+        return include;
     }
 
     public String getDurationString(BlockStartNode startNode, BlockEndNode endNode) {
