@@ -1,5 +1,5 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout">
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout" xmlns:f="/lib/form" xmlns:h="/lib/hudson" xmlns:m="jelly:hudson.util.jelly.MorphTagLibrary">
   <l:layout title="${%Extended Build History}">
     <st:include page="sidepanel.jelly" it="${it.job}"/>
     <st:adjunct includes="hudson.model.Job.buildTimeTrend_resources" />
@@ -21,8 +21,38 @@
         <l:icon src="symbol-chevron-down" id="chevron-down" alt="${%Show all Agents}"/>
       </template>
       <h1>${%Extended Build History}</h1>
+      <j:set var="statusFilter" value="${request.getParameter('status')}" defaultValue="all"/>
+      <j:set var="agentFilter" value="${request.getParameter('agent')}" defaultValue=""/>
+      <f:form action="." method="POST" name="filter">
+        <div class="jenkins-form-item tr help-sibling">
+        <div class="abh-job-filter">
+          <div>
+            <div class="jenkins-form-label">Filter by Status<a tooltip="Help for feature: Filter by Status" helpurl="/jenkins/plugin/pipeline-agent-build-history/help/statusFilter.html" href="#" class="jenkins-help-button" tabindex="9999" title="Help for feature: Filter by Status"><span>?</span></a></div>
+            <div class="setting-main">
+              <div class="jenkins-select" style="width: 130px;">
+              <select name="status" class="jenkins-select__input">
+                <option value="all" selected="${statusFilter == 'all' ? '': null}">All</option>
+                <option value="success" selected="${statusFilter == 'success' ? '': null}">Success</option>
+                <option value="unstable" selected="${statusFilter == 'unstable' ? '': null}">Unstable</option>
+                <option value="failure" selected="${statusFilter == 'failure' ? '': null}">Failed</option>
+                <option value="aborted" selected="${statusFilter == 'aborted' ? '': null}">Aborted</option>
+              </select>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="jenkins-form-label">Filter by Agent<a tooltip="Help for feature: Filter by Agent" helpurl="/jenkins/plugin/pipeline-agent-build-history/help/agentFilter.html" href="#" class="jenkins-help-button" tabindex="9999" title="Help for feature: Filter by Agent"><span>?</span></a></div>
+            <div class="setting-main"><input name="agent" type="search" value="${agentFilter}" class="jenkins-input" style="min-width: 300px"/></div>
+          </div>
+          <f:submit value="Filter"/>
+        </div>
+        <div class="help-area tr">
+          <div class="help"></div>
+        </div>
+        </div>
+      </f:form>
       <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
-      <l:progressiveRendering handler="${it.handler}" callback="abhBuildTimeTrend"/>
+      <l:progressiveRendering handler="${it.getHandler(statusFilter, agentFilter)}" callback="abhBuildTimeTrend"/>
       <div class="abh-trend">
         <table class="jenkins-table jenkins-table--small sortable abh-job-history" id="trend" style="width: auto;"
                data-show-text="${%Show all agents}" data-hide-text="${%Hide all agents}"

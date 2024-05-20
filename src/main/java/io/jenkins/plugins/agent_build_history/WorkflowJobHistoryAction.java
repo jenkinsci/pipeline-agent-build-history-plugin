@@ -30,7 +30,7 @@ public class WorkflowJobHistoryAction implements Action {
         return "extendedBuildHistory";
     }
 
-    public WorkflowJobTrend getHandler() {
-        return new WorkflowJobTrend(job.getBuilds());
+    public WorkflowJobTrend getHandler(String statusFilter, String agentFilter) {
+        return new WorkflowJobTrend(job.getBuilds(), statusFilter, agentFilter);
     }
 }
