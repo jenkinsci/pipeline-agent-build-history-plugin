@@ -21,11 +21,18 @@
         <l:icon src="symbol-chevron-down" id="chevron-down" alt="${%Show all Agents}"/>
       </template>
       <h1>${%Extended Build History}</h1>
+      <j:set var="startBuild" value="${request.getParameter('startBuild')}" defaultValue="-1"/>
       <j:set var="statusFilter" value="${request.getParameter('status')}" defaultValue="all"/>
       <j:set var="agentFilter" value="${request.getParameter('agent')}" defaultValue=""/>
+      <j:set var="handler" value="${it.getHandler(statusFilter, agentFilter, startBuild)}"/>
+      <j:set var="startNewer" value="${handler.startNewer}" defaultValue="-1"/>
+      <j:set var="startOlder" value="${handler.startOlder}" defaultValue="-1"/>
+      <j:set var="oldestBuild" value="${handler.oldestBuild}" defaultValue="-1"/>
+      <j:set var="newestBuild" value="${handler.newestBuild}" defaultValue="-1"/>
+      <j:set var="startBuild" value="${handler.startBuild}" defaultValue="-1"/>
       <f:form action="." method="POST" name="filter">
         <div class="jenkins-form-item tr help-sibling">
-        <div class="abh-job-filter">
+        <div class="abh-trend--filter">
           <div>
             <div class="jenkins-form-label">Filter by Status<a tooltip="Help for feature: Filter by Status" helpurl="/jenkins/plugin/pipeline-agent-build-history/help/statusFilter.html" href="#" class="jenkins-help-button" tabindex="9999" title="Help for feature: Filter by Status"><span>?</span></a></div>
             <div class="setting-main">
@@ -44,6 +51,10 @@
             <div class="jenkins-form-label">Filter by Agent<a tooltip="Help for feature: Filter by Agent" helpurl="/jenkins/plugin/pipeline-agent-build-history/help/agentFilter.html" href="#" class="jenkins-help-button" tabindex="9999" title="Help for feature: Filter by Agent"><span>?</span></a></div>
             <div class="setting-main"><input name="agent" type="search" value="${agentFilter}" class="jenkins-input" style="min-width: 300px"/></div>
           </div>
+          <div>
+            <div class="jenkins-form-label">Start Build</div>
+            <div class="setting-main"><input name="startBuild" type="number" min="${oldestBuild}" class="jenkins-input" style="width: 110px"/></div>
+          </div>
           <f:submit value="Filter"/>
         </div>
         <div class="help-area tr">
@@ -52,9 +63,9 @@
         </div>
       </f:form>
       <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
-      <l:progressiveRendering handler="${it.getHandler(statusFilter, agentFilter)}" callback="abhBuildTimeTrend"/>
+      <l:progressiveRendering handler="${handler.run()}" callback="abhBuildTimeTrend"/>
       <div class="abh-trend">
-        <table class="jenkins-table jenkins-table--small sortable abh-job-history" id="trend" style="width: auto;"
+        <table class="jenkins-table jenkins-table--small sortable abh-trend--table" id="trend"
                data-show-text="${%Show all agents}" data-hide-text="${%Hide all agents}"
                data-no-label="${%No Label}">
           <thead>
@@ -72,7 +83,42 @@
           </thead>
           <tbody></tbody>
         </table>
-        <img src="../buildTimeGraph/png" width="500" height="400" lazymap="../buildTimeGraph/map" alt="[${%Build time graph}]" />
+        <div class="abh-trend--scroll-buttons">
+          <j:if test="${startBuild lt newestBuild}">
+            <f:form action="." method="POST" name="filter">
+              <input type="hidden" name="status" value="${statusFilter}"/>
+              <input type="hidden" name="agent" value="${agentFilter}"/>
+              <input type="hidden" name="startBuild" value="-1"/>
+              <button type="submit" tooltip="Newest Builds" class="jenkins-button abh-trend--scroll-button"><l:icon src="symbol-arrow-start plugin-pipeline-agent-build-history" /></button>
+            </f:form>
+            <f:form action="." method="POST" name="filter">
+              <input type="hidden" name="status" value="${statusFilter}"/>
+              <input type="hidden" name="agent" value="${agentFilter}"/>
+              <input type="hidden" name="startBuild" value="${startNewer}"/>
+              <button type="submit" tooltip="Newer Builds" class="jenkins-button abh-trend--scroll-button"><l:icon src="symbol-arrow-up-outline plugin-ionicons-api" /></button>
+            </f:form>
+          </j:if>
+          <j:if test="${startOlder gt 0}">
+            <div style="margin-top: 1.75rem">
+            <f:form action="." method="POST" name="filter">
+              <input type="hidden" name="status" value="${statusFilter}"/>
+              <input type="hidden" name="agent" value="${agentFilter}"/>
+              <input type="hidden" name="startBuild" value="${startOlder}"/>
+              <button type="submit" tooltip="Older Builds" class="jenkins-button abh-trend--scroll-button"><l:icon src="symbol-arrow-down-outline plugin-ionicons-api" /></button>
+            </f:form>
+            </div>
+            <div style="margin-bottom: 1.75rem">
+            <f:form action="." method="POST" name="filter">
+              <input type="hidden" name="status" value="${statusFilter}"/>
+              <input type="hidden" name="agent" value="${agentFilter}"/>
+              <input type="hidden" name="startBuild" value="${oldestBuild}"/>
+              <button type="submit" tooltip="Oldest Builds" class="jenkins-button abh-trend--scroll-button"><l:icon src="symbol-arrow-end plugin-pipeline-agent-build-history" /></button>
+            </f:form>
+            </div>
+          </j:if>
+
+        </div>
+        <img src="../buildTimeGraph/png" width="500" height="400" lazymap="../buildTimeGraph/map" alt="[${%Build time graph}]" class="jenkins-!-margin-left-3"/>
       </div>
     </l:main-panel>
   </l:layout>

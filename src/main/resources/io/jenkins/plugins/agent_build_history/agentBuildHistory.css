@@ -10,15 +10,31 @@
 
 .abh-trend {
   display: flex;
-  column-gap: 20px;
+  column-gap: 5px;
 }
 
-.abh-job-history {
+.abh-trend--scroll-buttons {
+  display: flex;
+  gap: 5px;
+  flex-direction: column;
+}
+.abh-trend--scroll-button {
+  padding: .3rem;
+}
+
+.abh-trend--table {
   height: fit-content;
+  width: auto;
 }
 
-.abh-job-history tbody>tr>td {
+.abh-trend--table tbody>tr>td {
   height: auto!important;
+}
+
+.abh-trend--filter {
+  display: flex;
+  gap: 10px;
+  align-items: end;
 }
 
 .abh-list__button {
@@ -39,10 +55,4 @@
 
 .abh-not-loaded {
   background: var(--error-color)!important;
-}
-
-.abh-job-filter {
-  display: flex;
-  gap: 10px;
-  align-items: end;
 }
