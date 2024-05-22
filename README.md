@@ -44,6 +44,10 @@ Similarly, the `Trend` page of a pipeline job is not able to show information ab
 a run. The plugin adds a link in a jobs sidepanel to a view with an `Extended Build History`. For each run all the used 
 agents are listed, together with the label expression used in the `node` step declaration and the duration of the `node`
 step. When more than one agent was used in a run, click on the down arrow to show all used agents of that run.
+The number of runs is now limited to 40 with paging buttons on the right that allow to jump to the start/end. 
+Alternatively you can directly jump to a run via the input field at the top.
+
+Runs can be filtered by result and/or by agent used.
 
 
 ![trend.png](docs/trend.png)
