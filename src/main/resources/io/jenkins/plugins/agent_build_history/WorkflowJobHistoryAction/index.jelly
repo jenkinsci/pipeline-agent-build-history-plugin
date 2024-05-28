@@ -63,25 +63,107 @@
         </div>
       </f:form>
       <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
-      <l:progressiveRendering handler="${handler.run()}" callback="abhBuildTimeTrend"/>
       <div class="abh-trend">
         <table class="jenkins-table jenkins-table--small sortable abh-trend--table" id="trend"
-               data-show-text="${%Show all agents}" data-hide-text="${%Hide all agents}"
-               data-no-label="${%No Label}">
+               data-show-text="${%Show all agents}" data-hide-text="${%Hide all agents}">
           <thead>
-          <tr>
-            <th class="jenkins-table__cell--tight abh-center">${%S}</th>
-            <th initialSortDir="up">${%Build}</th>
-            <th>${%Time Since}</th>
-            <th tooltip="${%Overall Build duration}">${%Duration}</th>
-            <th data-sort-disable="true">${%Agents}</th>
-            <th data-sort-disable="true" tooltip="${%The label expression used to select the agent}">${%Labels}</th>
-            <th data-sort-disable="true" tooltip="${%The duration of the specific node step on the agent}">${%Agent Duration}</th>
-            <th/>
-            <th/>
-          </tr>
+            <tr>
+              <th class="jenkins-table__cell--tight abh-center">${%S}</th>
+              <th initialSortDir="up">${%Build}</th>
+              <th>${%Time Since}</th>
+              <th tooltip="${%Overall Build duration}">${%Duration}</th>
+              <th data-sort-disable="true">${%Agents}</th>
+              <th data-sort-disable="true" tooltip="${%The label expression used to select the agent}">${%Labels}</th>
+              <th data-sort-disable="true" tooltip="${%The duration of the specific node step on the agent}">${%Agent Duration}</th>
+              <th/>
+              <th/>
+            </tr>
           </thead>
-          <tbody></tbody>
+          <tbody>
+            <j:forEach var="result" items="${handler.results}">
+              <j:set var="run" value="${result.run}"/>
+              <j:set var="ic" value="${run.iconColor}"/>
+              <j:set var="agents" value="${result.agents}"/>
+              <tr>
+                <td data="${ic.ordinal()}" class="jenkins-table__cell--tight jenkins-table__icon">
+                  <l:icon alt="${ic.description}" src="symbol-status-${ic.iconName}"
+                          tooltip="${ic.description}"/>
+                </td>
+                <td data="${run.number}">
+                  <a href="${rootURL}/${run.url}" class="model-link">${run.displayName}</a>
+                </td>
+                <td data="${run.timestampString2}">
+                  ${run.timestampString}
+                </td>
+                <td data="${run.duration}">
+                  ${run.durationString}
+                </td>
+                <td>
+                  <j:if test="${agents.size() gt 0}">
+                    <div class="abh-cell-list">
+                      <j:forEach var="agent" items="${agents}" indexVar="index">
+                        <div class="${index > 0 ? 'abh-hidden jenkins-hidden' : ''}">
+                          <j:choose>
+                            <j:when test="${agent.builtOn != null}">
+                              <a href="${rootURL}/computer/${agent.builtOn}">${agent.builtOnStr}</a>
+                            </j:when>
+                            <j:otherwise>
+                              ${agent.builtOnStr}
+                            </j:otherwise>
+                          </j:choose>
+                        </div>
+                      </j:forEach>
+                    </div>
+                  </j:if>
+                </td>
+                <td>
+                  <j:if test="${agents.size() gt 0}">
+                    <div class="abh-cell-list">
+                      <j:forEach var="agent" items="${agents}" indexVar="index">
+                        <div class="${index > 0 ? 'abh-hidden jenkins-hidden' : ''}">
+                          <j:choose>
+                            <j:when test="${agent.label != null}">
+                              <a href="${rootURL}/label/${agent.label}">${agent.label}</a>
+                            </j:when>
+                            <j:otherwise>
+                              ${%No Label}
+                            </j:otherwise>
+                          </j:choose>
+                        </div>
+                      </j:forEach>
+                    </div>
+                  </j:if>
+                </td>
+                <td>
+                  <j:if test="${agents.size() gt 0}">
+                    <div class="abh-cell-list">
+                      <j:forEach var="agent" items="${agents}" indexVar="index">
+                        <div class="${index > 0 ? 'abh-hidden jenkins-hidden' : ''}">
+                          <j:if test="${agent.duration != null}">
+                            ${agent.duration}
+                          </j:if>
+                        </div>
+                      </j:forEach>
+                    </div>
+                  </j:if>
+                </td>
+                <td>
+                  <j:if test="${agents.size() > 0}">
+                    <div class="abh-list__button">
+                      <button tooltip="${%Show all agents}" class="jenkins-button" data-hidden="true">
+                        <l:icon src="symbol-chevron-down" alt="${%Show all Agents}"/>
+                      </button>
+                    </div>
+                  </j:if>
+                </td>
+                <td class="jenkins-table__cell--tight">
+                  <div class="jenkins-table__cell__button-wrapper">
+                    <a href="${result.consoleUrl}" class="jenkins-table__button"><l:icon src="symbol-terminal" alt="${%Console output}"/> </a>
+                  </div>
+                </td>
+              </tr>
+            </j:forEach>
+          </tbody>
         </table>
         <div class="abh-trend--scroll-buttons">
           <j:if test="${startBuild lt newestBuild}">
