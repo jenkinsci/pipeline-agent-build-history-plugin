@@ -77,6 +77,7 @@
               <th data-sort-disable="true" tooltip="${%The duration of the specific node step on the agent}">${%Agent Duration}</th>
               <th/>
               <th/>
+              <th class="abh-header-left" data-sort-disable="true">${%Badges}</th>
             </tr>
           </thead>
           <tbody>
@@ -159,6 +160,13 @@
                 <td class="jenkins-table__cell--tight">
                   <div class="jenkins-table__cell__button-wrapper">
                     <a href="${result.consoleUrl}" class="jenkins-table__button"><l:icon src="symbol-terminal" alt="${%Console output}"/> </a>
+                  </div>
+                </td>
+                <td class="jenkins-table__cell--tight">
+                  <div class="abh-badges">
+                    <j:forEach var="badge" items="${run.badgeActions}">
+                      <st:include it="${badge}" page="badge.jelly" />
+                    </j:forEach>
                   </div>
                 </td>
               </tr>

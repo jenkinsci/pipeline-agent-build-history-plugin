@@ -57,3 +57,12 @@
   background: var(--error-color)!important;
 }
 
+.abh-badges {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.abh-header-left {
+  padding-left: 0 !important;
+}
