@@ -3,9 +3,8 @@ package io.jenkins.plugins.agent_build_history;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Functions;
 import hudson.model.BallColor;
+import hudson.model.Cause;
 import hudson.model.Run;
-import java.util.ArrayList;
-import java.util.List;
 import jenkins.console.ConsoleUrlProvider;
 import jenkins.util.ProgressiveRendering;
 import net.sf.json.JSON;
@@ -14,6 +13,9 @@ import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Restricted(NoExternalUse.class)
 public class RunListTable extends ProgressiveRendering {
@@ -50,6 +52,13 @@ public class RunListTable extends ProgressiveRendering {
     Run.Summary buildStatusSummary = run.getBuildStatusSummary();
     element.put("buildStatusSummaryWorse", buildStatusSummary.isWorse);
     element.put("buildStatusSummaryMessage", buildStatusSummary.message);
+    List<Cause> causeList = run.getCauses();
+    if (!causeList.isEmpty()) {
+      element.put("shortDescription", causeList.get(causeList.size() - 1).getShortDescription());
+    } else {
+      element.put("shortDescription", "UnknownCause");
+    }
+
     JSONArray flowNodes = new JSONArray();
     if (run instanceof WorkflowRun) {
       for (AgentExecution.FlowNodeExecution nodeExec: execution.getFlowNodes()) {

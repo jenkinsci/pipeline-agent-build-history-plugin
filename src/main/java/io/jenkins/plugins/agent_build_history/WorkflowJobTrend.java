@@ -1,13 +1,12 @@
 package io.jenkins.plugins.agent_build_history;
 
 import hudson.Util;
+import hudson.model.Cause;
 import hudson.model.Node;
 import hudson.model.Result;
 import hudson.model.Run;
 import jenkins.console.ConsoleUrlProvider;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.workflow.actions.TimingAction;
 import org.jenkinsci.plugins.workflow.cps.actions.ArgumentsActionImpl;
 import org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode;
@@ -194,6 +193,15 @@ public class WorkflowJobTrend {
 
         public String getConsoleUrl() {
             return ConsoleUrlProvider.getRedirectUrl(run);
+        }
+
+        public String getShortDescription() {
+            List<Cause> causeList = run.getCauses();
+            if (!causeList.isEmpty()) {
+                return causeList.get(causeList.size() - 1).getShortDescription();
+            } else {
+                return "Unknown Cause";
+            }
         }
     }
 
