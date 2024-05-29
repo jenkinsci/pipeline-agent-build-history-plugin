@@ -39,127 +39,6 @@ Behaviour.specify(".abh-list__button button", "abh-list__button", 0, function(bu
   }
 });
 
-window.abhBuildTimeTrend = function (data) {
-  var table = document.getElementById("trend");
-  var rootURL = document.head.getAttribute("data-rooturl");
-
-  for (var x = 0; data.length > x; x++) {
-    var e = data[x];
-    var tr = document.createElement("tr");
-
-    let td1 = document.createElement("td");
-    td1.setAttribute("data", e.iconColorOrdinal);
-    td1.classList.add("jenkins-table__cell--tight", "jenkins-table__icon");
-    let div1 = document.createElement("div");
-    div1.classList.add("jenkins-table__cell__button-wrapper");
-    let svg = generateSVGIcon(e.iconName);
-    div1.appendChild(svg);
-    td1.appendChild(div1);
-    tr.appendChild(td1);
-
-    let td2 = document.createElement("td");
-    td2.setAttribute("data", e.number);
-
-    let link2 = document.createElement("a");
-    link2.href = rootURL + "/" + e.url;
-    link2.classList.add("model-link", "inside");
-    link2.innerText = e.displayName;
-    td2.appendChild(link2);
-    tr.appendChild(td2);
-
-    let td3 = document.createElement("td");
-    td3.setAttribute("data", e.timestampString2);
-    td3.textContent = e.timestampString;
-    tr.appendChild(td3);
-
-    let td4 = document.createElement("td");
-    td4.setAttribute("data", e.duration);
-    td4.textContent = e.durationString;
-    tr.appendChild(td4);
-
-    let td5 = document.createElement("td");
-    let td6 = document.createElement("td");
-    let td7 = document.createElement("td");
-    let tdButton = document.createElement("td");
-    const agentCount = e.agents.length;
-    if (agentCount > 0) {
-      let i = 0;
-
-      let tdAgentList = createCellList(td5);
-      let tdLabelList = createCellList(td6);
-      let tdDurationList = createCellList(td7);
-      for (const agent of e.agents) {
-        i++;
-        let a = document.createElement("div");
-        let l = document.createElement("div");
-        let duration = document.createElement("div");
-        tdAgentList.appendChild(a);
-        tdLabelList.appendChild(l);
-        tdDurationList.appendChild(duration);
-        if (i > 1) {
-          a.classList.add("abh-hidden", "jenkins-hidden");
-          l.classList.add("abh-hidden", "jenkins-hidden");
-          duration.classList.add("abh-hidden", "jenkins-hidden");
-        }
-        let buildInfo = null;
-        let buildInfoStr = escapeHTML(agent.builtOnStr || "");
-        if (agent.builtOn) {
-          buildInfo = document.createElement("a");
-          buildInfo.classList.add("model-link", "abh-agent-link")
-          buildInfo.href = rootURL + "/computer/" + agent.builtOn;
-          buildInfo.innerText = buildInfoStr;
-          a.appendChild(buildInfo);
-        } else {
-          a.innerText = buildInfoStr;
-        }
-        if (agent.label) {
-          let label = document.createElement("a");
-          label.href = rootURL + "/label/" + agent.label;
-          label.innerText = agent.label;
-          l.appendChild(label);
-        } else {
-          l.innerText = table.dataset.noLabel;
-        }
-        if (agent.duration) {
-          duration.innerText = agent.duration;
-        }
-      }
-      if (agentCount > 1) {
-        let d = document.createElement("div");
-        d.classList.add("abh-list__button");
-        let b = document.createElement("button");
-        b.setAttribute("tooltip", table.dataset.showText);
-        b.appendChild(generateSVGIcon("chevron-down"));
-        b.classList.add("jenkins-button");
-        b.dataset.hidden = "true";
-        d.appendChild(b);
-        tdButton.appendChild(d);
-      }
-    }
-    tr.appendChild(td5);
-    tr.appendChild(td6);
-    tr.appendChild(td7);
-    tr.appendChild(tdButton);
-
-    let tdLast = document.createElement("td");
-    tdLast.classList.add("jenkins-table__cell--tight");
-    let div2 = document.createElement("div");
-    div2.classList.add("jenkins-table__cell__button-wrapper");
-    let a3 = document.createElement("a");
-    a3.classList.add("jenkins-table__button");
-    a3.href = e.consoleUrl;
-    a3.appendChild(generateSVGIcon("console"));
-    div2.appendChild(a3);
-    tdLast.appendChild(div2);
-    tr.appendChild(tdLast);
-
-    table.tBodies[0].appendChild(tr);
-    Behaviour.applySubtree(tr);
-  }
-  ts_refresh(table);
-};
-
-
 window.abhDisplayExtendedBuildHistory = function(data) {
   const rootUrl = document.head.getAttribute("data-rooturl");
   const table = document.getElementById("projectStatus");
@@ -200,6 +79,9 @@ window.abhDisplayExtendedBuildHistory = function(data) {
     a2.textContent = run.displayName;
     td2.appendChild(a2);
     tr.appendChild(td2);
+
+    let tdMessage = document.createElement("td");
+    tdMessage.innerText = run.shortDescription;
 
     let tdTimeSince = document.createElement("td");
     let tdDuration = document.createElement("td");
@@ -256,6 +138,7 @@ window.abhDisplayExtendedBuildHistory = function(data) {
     div2.appendChild(a3);
     tdConsole.appendChild(div2);
 
+    tr.appendChild(tdMessage);
     tr.appendChild(tdTimeSince);
     tr.appendChild(tdDuration);
     tr.appendChild(tdStatus);

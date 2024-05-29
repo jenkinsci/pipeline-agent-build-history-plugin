@@ -70,6 +70,7 @@
             <tr>
               <th class="jenkins-table__cell--tight abh-center">${%S}</th>
               <th initialSortDir="up">${%Build}</th>
+              <th data-sort-disable="true">${%Message}</th>
               <th>${%Time Since}</th>
               <th tooltip="${%Overall Build duration}">${%Duration}</th>
               <th data-sort-disable="true">${%Agents}</th>
@@ -92,6 +93,9 @@
                 </td>
                 <td data="${run.number}">
                   <a href="${rootURL}/${run.url}" class="model-link">${run.displayName}</a>
+                </td>
+                <td>
+                  ${result.shortDescription}
                 </td>
                 <td data="${run.timestampString2}">
                   ${run.timestampString}

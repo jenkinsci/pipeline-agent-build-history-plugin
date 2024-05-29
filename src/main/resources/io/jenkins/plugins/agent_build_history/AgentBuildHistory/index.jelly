@@ -41,6 +41,7 @@
           <tr>
             <th class="jenkins-table__cell--tight abh-center">${%S}</th>
             <th>${%Build}</th>
+            <th>${%Message}</th>
             <th>${%Time Since}</th>
             <th>${%Duration}</th>
             <th>${%Status}</th>
