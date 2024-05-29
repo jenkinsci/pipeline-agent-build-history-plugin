@@ -46,7 +46,7 @@
 .abh-list__button > button {
   min-height: 20px;
   max-height: 20px;
-  padding: 0.3rem 0.3rem;
+  padding: 0.3rem 0.3rem !important;
 }
 
 .abh-list__button button[data-hidden=false] {
