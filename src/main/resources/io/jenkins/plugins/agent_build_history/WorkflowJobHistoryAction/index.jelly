@@ -149,7 +149,7 @@
                   </j:if>
                 </td>
                 <td>
-                  <j:if test="${agents.size() > 0}">
+                  <j:if test="${agents.size() > 1}">
                     <div class="abh-list__button">
                       <button tooltip="${%Show all agents}" class="jenkins-button" data-hidden="true">
                         <l:icon src="symbol-chevron-down" alt="${%Show all Agents}"/>
