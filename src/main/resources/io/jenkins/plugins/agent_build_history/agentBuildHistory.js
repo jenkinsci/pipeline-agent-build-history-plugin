@@ -20,6 +20,19 @@ function addCellRow(cellList, content, hidden) {
   return cell;
 }
 
+Behaviour.specify(".abh-rerun__button", "abh-rerun__button", 0, function(button) {
+  button.onclick = function(event) {
+    event.preventDefault();
+    const runid = button.dataset.runid;
+    let body = new URLSearchParams({ number: runid });
+    fetch("replay", {
+      method: "POST",
+      headers: crumb.wrap({}),
+      body,
+    });
+  }
+});
+
 Behaviour.specify(".abh-list__button button", "abh-list__button", 0, function(button) {
   button.onclick = function() {
     let tr = button.closest("tr");
@@ -50,9 +63,8 @@ window.abhDisplayExtendedBuildHistory = function(data) {
 
     let td1 = document.createElement("td");
     td1.setAttribute("data", run.iconColorOrdinal);
-    td1.classList.add("jenkins-table__cell--tight", "jenkins-table__icon");
+    td1.classList.add("jenkins-table__cell--tight", "jenkins-table__icon", "abh-status");
     let div1 = document.createElement("div");
-    div1.classList.add("jenkins-table__cell__button-wrapper");
     let svg = generateSVGIcon(run.iconName);
     div1.appendChild(svg);
     td1.appendChild(div1);
@@ -60,6 +72,7 @@ window.abhDisplayExtendedBuildHistory = function(data) {
 
     let td2 = document.createElement("td");
     td2.classList.add("no-wrap");
+    td2.setAttribute("data", run.parentFullDisplayName + "/" + run.number);
     let a1 = document.createElement("a");
     a1.classList.add("jenkins-table__link", "model-link");
     a1.href = rootUrl + "/" + run.parentUrl;

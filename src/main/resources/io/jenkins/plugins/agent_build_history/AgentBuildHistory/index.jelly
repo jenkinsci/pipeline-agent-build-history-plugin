@@ -39,7 +39,7 @@
              data-show-text="${%Show nodes}" data-hide-text="${%Hide nodes}" >
         <thead>
           <tr>
-            <th class="jenkins-table__cell--tight abh-center">${%S}</th>
+            <th class="jenkins-table__cell--tight abh-status">${%S}</th>
             <th>${%Build}</th>
             <th>${%Message}</th>
             <th>${%Time Since}</th>
