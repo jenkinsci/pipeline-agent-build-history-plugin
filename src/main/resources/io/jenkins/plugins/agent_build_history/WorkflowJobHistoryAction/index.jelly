@@ -68,9 +68,9 @@
                data-show-text="${%Show all agents}" data-hide-text="${%Hide all agents}">
           <thead>
             <tr>
-              <th class="jenkins-table__cell--tight abh-center">${%S}</th>
+              <th class="jenkins-table__cell--tight abh-status">${%S}</th>
               <th initialSortDir="up">${%Build}</th>
-              <th data-sort-disable="true">${%Message}</th>
+              <th>${%Message}</th>
               <th>${%Time Since}</th>
               <th tooltip="${%Overall Build duration}">${%Duration}</th>
               <th data-sort-disable="true">${%Agents}</th>
@@ -87,9 +87,11 @@
               <j:set var="ic" value="${run.iconColor}"/>
               <j:set var="agents" value="${result.agents}"/>
               <tr>
-                <td data="${ic.ordinal()}" class="jenkins-table__cell--tight jenkins-table__icon">
-                  <l:icon alt="${ic.description}" src="symbol-status-${ic.iconName}"
-                          tooltip="${ic.description}"/>
+                <td data="${ic.ordinal()}" class="jenkins-table__cell--tight jenkins-table__icon abh-status">
+                  <div>
+                    <l:icon alt="${ic.description}" src="symbol-status-${ic.iconName}"
+                            tooltip="${ic.description}"/>
+                  </div>
                 </td>
                 <td data="${run.number}">
                   <a href="${rootURL}/${run.url}" class="model-link">${run.displayName}</a>
@@ -161,9 +163,16 @@
                     </div>
                   </j:if>
                 </td>
-                <td class="jenkins-table__cell--tight">
-                  <div class="jenkins-table__cell__button-wrapper">
-                    <a href="${result.consoleUrl}" class="jenkins-table__button"><l:icon src="symbol-terminal" alt="${%Console output}"/> </a>
+                <td class="jenkins-table__cell--tight abh-actions">
+                  <div>
+                    <div class="jenkins-table__cell__button-wrapper">
+                      <a href="${result.consoleUrl}" class="jenkins-table__button"><l:icon src="symbol-terminal" alt="${%Console output}"/> </a>
+                    </div>
+                    <j:if test="${it.hasReplayPermission(run)}">
+                      <div class="jenkins-table__cell__button-wrapper">
+                        <a href="#" class="jenkins-table__button abh-rerun__button" data-runid="${run.number}" tooltip="${%Replay}"><l:icon src="symbol-arrow-redo-outline plugin-ionicons-api" alt="${%Rerun}"/> </a>
+                      </div>
+                    </j:if>
                   </div>
                 </td>
                 <td class="jenkins-table__cell--tight">

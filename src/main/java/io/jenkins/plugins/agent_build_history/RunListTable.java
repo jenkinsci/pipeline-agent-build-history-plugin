@@ -40,6 +40,7 @@ public class RunListTable extends ProgressiveRendering {
     element.put("iconColorOrdinal", iconColor.ordinal());
     element.put("iconColorDescription", iconColor.getDescription());
     element.put("url", run.getUrl());
+    element.put("number", run.getNumber());
     element.put("consoleUrl", ConsoleUrlProvider.getRedirectUrl(run));
     element.put("iconName", run.getIconColor().getIconName());
     element.put("parentUrl", run.getParent().getUrl());
