@@ -42,6 +42,9 @@ public class WorkflowJobHistoryAction implements Action {
     @POST
     public void doReplay(@QueryParameter int number) {
         WorkflowRun run = job.getBuildByNumber(number);
+        if (!hasReplayPermission(run)) {
+            return;
+        }
         ReplayAction replayAction = run.getAction(ReplayAction.class);
         if (!isReplayable(replayAction)) {
             return;
