@@ -6,9 +6,11 @@ import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
 import hudson.model.Computer;
+import hudson.model.Item;
 import hudson.model.Job;
 import hudson.model.Node;
 import hudson.model.Run;
+import hudson.model.listeners.ItemListener;
 import hudson.model.listeners.RunListener;
 import hudson.util.RunList;
 import java.util.Collections;
@@ -53,9 +55,23 @@ public class AgentBuildHistory implements Action {
     @Override
     public void onDeleted(Run run) {
       for (Set<AgentExecution> executions: agentExecutions.values()) {
-        executions.removeIf(exec -> run.getFullDisplayName().equals(exec.getRun().getFullDisplayName()));
+        executions.removeIf(exec -> run == exec.getRun());
       }
       agentExecutionsMap.remove(run);
+    }
+  }
+
+  @Extension
+  public static class HistoryItemListener extends ItemListener {
+
+    @Override
+    public void onDeleted(Item item) {
+      if (item instanceof Job) {
+        for (Set<AgentExecution> executions: agentExecutions.values()) {
+          executions.removeIf( exec -> exec.getRun().getParent() == item);
+        }
+        agentExecutionsMap.keySet().removeIf(key -> key.getParent() == item);
+      }
     }
   }
 
