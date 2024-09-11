@@ -14,7 +14,9 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Restricted(NoExternalUse.class)
@@ -50,6 +52,8 @@ public class RunListTable extends ProgressiveRendering {
     element.put("durationString", run.getDurationString());
     element.put("timestampString", run.getTimestampString());
     element.put("timestampString2", run.getTimestampString2());
+    element.put("startTimeInMillis", run.getStartTimeInMillis());
+    element.put("startTimeReadable", formatStartTime(run.getStartTimeInMillis()));
     Run.Summary buildStatusSummary = run.getBuildStatusSummary();
     element.put("buildStatusSummaryWorse", buildStatusSummary.isWorse);
     element.put("buildStatusSummaryMessage", buildStatusSummary.message);
@@ -82,6 +86,11 @@ public class RunListTable extends ProgressiveRendering {
     element.put("flowNodeStatusWorse", node.getFlowNodeStatus().isWorse());
     element.put("flowNodeStatusMessage", node.getFlowNodeStatus().getMessage());
     return element;
+  }
+
+  private String formatStartTime(long startTimeInMillis) {
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss:SSS");
+    return formatter.format(new Date(startTimeInMillis));
   }
 
   @Override

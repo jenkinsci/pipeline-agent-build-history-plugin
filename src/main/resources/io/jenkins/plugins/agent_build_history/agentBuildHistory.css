@@ -90,3 +90,53 @@
   gap: 18px;
   padding: 0 15px;
 }
+
+.jenkins-table>thead>tr>th a {
+    text-decoration: underline; /* Underline for sortable columns */
+    color: #007bff; /* Change color for better visibility */
+    font-weight: 600; /* Remove bold for better visibility */
+}
+
+.pagination-container {
+display: flex;
+flex-direction: row;
+align-items: center;
+justify-content: flex-start;
+margin-top: 20px;
+}
+
+.pagination {
+display: flex;
+align-items: center;
+margin-right: 20px;
+}
+
+.page-input {
+display: inline-block;
+width: 60px;
+text-align: center;
+margin: 0 10px;
+}
+
+.page-link {
+margin: 0 10px;
+}
+
+.page-size-selector {
+display: flex;
+align-items: center;
+}
+
+.page-size-selector label {
+margin-right: 10px;
+}
+
+.page-size-input {
+display: inline-block;
+width: 80px;
+text-align: center;
+}
+
+.page-label {
+margin: 0 5px;
+}

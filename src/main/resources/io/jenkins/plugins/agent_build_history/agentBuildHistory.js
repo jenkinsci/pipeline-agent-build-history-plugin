@@ -61,6 +61,9 @@ window.abhDisplayExtendedBuildHistory = function(data) {
     const run = data[x];
     const tr = document.createElement("tr");
 
+    // Set a data attribute for sorting by startTimeInMillis
+    tr.setAttribute("data-start-time", run.startTimeInMillis);
+
     let td1 = document.createElement("td");
     td1.setAttribute("data", run.iconColorOrdinal);
     td1.classList.add("jenkins-table__cell--tight", "jenkins-table__icon", "abh-status");
@@ -95,6 +98,9 @@ window.abhDisplayExtendedBuildHistory = function(data) {
 
     let tdMessage = document.createElement("td");
     tdMessage.innerText = run.shortDescription;
+
+    let tdStarted = document.createElement("td");
+    tdStarted.innerText = run.startTimeReadable;
 
     let tdTimeSince = document.createElement("td");
     let tdDuration = document.createElement("td");
@@ -152,6 +158,7 @@ window.abhDisplayExtendedBuildHistory = function(data) {
     tdConsole.appendChild(div2);
 
     tr.appendChild(tdMessage);
+    tr.appendChild(tdStarted);
     tr.appendChild(tdTimeSince);
     tr.appendChild(tdDuration);
     tr.appendChild(tdStatus);

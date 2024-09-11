@@ -34,17 +34,76 @@
       <t:setIconSize/>
       <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
       <l:progressiveRendering handler="${it.handler}" callback="abhDisplayExtendedBuildHistory"/>
-      <table class="jenkins-table sortable ${iconSize == '16x16' ? 'jenkins-table--small' : iconSize == '24x24' ? 'jenkins-table--medium' : ''}"
+      <!-- Pagination Controls -->
+      <j:set var="page" value="${request.getParameter('page') != null ? request.getParameter('page') : 1}"/>
+      <j:set var="pageSize" value="${request.getParameter('pageSize') != null ? request.getParameter('pageSize') : it.entriesPerPage}"/>
+      <j:set var="totalPages" value="${it.totalPages}"/>
+      <j:set var="sortColumn" value="${request.getParameter('sortColumn') != null ? request.getParameter('sortColumn') : it.defaultSortColumn}"/>
+      <j:set var="sortOrder" value="${request.getParameter('sortOrder') != null ? request.getParameter('sortOrder') : it.defaultSortOrder}"/>
+      <div class="pagination-container">
+        <!-- Pagination Previous/Next Buttons -->
+        <nav aria-label="Page navigation" class="pagination">
+          <!-- Previous button -->
+          <j:if test="${page &gt; 1}">
+            <a class="page-link" href="${request.requestURI}?page=${page - 1}&amp;pageSize=${pageSize}&amp;sortColumn=${sortColumn}&amp;sortOrder=${sortOrder}" aria-label="Previous">
+              <span aria-hidden="true">&#171; Previous</span>
+            </a>
+          </j:if>
+
+          <!-- Page Input Field -->
+          <span class="page-label">Page</span>
+          <input type="number" class="form-control page-input" min="1" max="${totalPages}" value="${page}" onchange="window.location.href='${request.requestURI}?page=' + this.value + '&amp;pageSize=${pageSize}&amp;sortColumn=${sortColumn}&amp;sortOrder=${sortOrder}'"/>
+          <span class="page-label">of ${totalPages}</span>
+
+          <!-- Next button -->
+          <j:if test="${page &lt; totalPages}">
+            <a class="page-link" href="${request.requestURI}?page=${page + 1}&amp;pageSize=${pageSize}&amp;sortColumn=${sortColumn}&amp;sortOrder=${sortOrder}" aria-label="Next">
+              <span aria-hidden="true">Next &#187;</span>
+            </a>
+          </j:if>
+        </nav>
+
+        <!-- Page Size Input -->
+        <div class="page-size-selector">
+          <label for="pageSizeInput">Items per page:</label>
+          <input type="number" id="pageSizeInput" class="form-control page-size-input" min="1" value="${pageSize}" onchange="window.location.href='${request.requestURI}?page=1&amp;pageSize=' + this.value + '&amp;sortColumn=${sortColumn}&amp;sortOrder=${sortOrder}'"/>
+        </div>
+      </div>
+
+      <table class="jenkins-table ${iconSize == '16x16' ? 'jenkins-table--small' : iconSize == '24x24' ? 'jenkins-table--medium' : ''}"
              id="projectStatus" style="display: none; width: auto;" data-icon-size-class="${iconSizeClass}"
              data-show-text="${%Show nodes}" data-hide-text="${%Hide nodes}" >
         <thead>
           <tr>
-            <th class="jenkins-table__cell--tight abh-status">${%S}</th>
-            <th>${%Build}</th>
-            <th>${%Message}</th>
-            <th>${%Time Since}</th>
-            <th>${%Duration}</th>
-            <th>${%Status}</th>
+            <th class="jenkins-table__cell--tight abh-status" data-sort-disable="true">${%S}</th>
+            <th>
+              <a class="sortheader"
+                 href="${request.requestURI}?page=${page}&amp;pageSize=${pageSize}&amp;sortColumn=build&amp;sortOrder=${sortColumn == 'build' ? (sortOrder == 'asc' ? 'desc' : 'asc') : sortOrder}">
+                ${%Build}
+                <j:if test="${sortColumn == 'build'}">
+                  <j:choose>
+                    <j:when test="${sortOrder == 'asc'}"> <span class="sortarrow" style="font-size: large;">  ↑</span> <!-- Up arrow for ascending order --></j:when>
+                    <j:otherwise> <span class="sortarrow" style="font-size: large;">  ↓</span> <!-- Down arrow for descending order --></j:otherwise>
+                  </j:choose>
+                </j:if>
+              </a>
+            </th>
+            <th data-sort-disable="true">${%Message}</th>
+            <th>
+              <a class="sortheader"
+                 href="${request.requestURI}?page=${page}&amp;pageSize=${pageSize}&amp;sortColumn=startTime&amp;sortOrder=${sortColumn == 'startTime' ? (sortOrder == 'asc' ? 'desc' : 'asc') : sortOrder}">
+                ${%Started}
+                <j:if test="${sortColumn == 'startTime'}">
+                  <j:choose>
+                    <j:when test="${sortOrder == 'asc'}"> <span class="sortarrow" style="font-size: large;">  ↑</span> <!-- Up arrow for ascending order --></j:when>
+                    <j:otherwise> <span class="sortarrow" style="font-size: large;">  ↓</span> <!-- Down arrow for descending order --></j:otherwise>
+                  </j:choose>
+                </j:if>
+              </a>
+            </th>
+            <th data-sort-disable="true">${%Time Since}</th>
+            <th data-sort-disable="true">${%Duration}</th>
+            <th data-sort-disable="true">${%Status}</th>
             <th data-sort-disable="true"/>
             <th class="jenkins-table__cell--tight" data-sort-disable="true"></th>
           </tr>
