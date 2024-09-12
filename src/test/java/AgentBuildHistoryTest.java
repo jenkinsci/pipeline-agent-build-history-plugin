@@ -97,7 +97,7 @@ public class AgentBuildHistoryTest {
         // Create a Workflow (Pipeline) job
         WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "pipeline-project");
         job.setDefinition(new CpsFlowDefinition(
-                "node { powershell 'Write-Host \"Hello, World!\"' }", true));
+                "node { echo 'Hello, World!' }", true));
 
         // Build the project
         WorkflowRun build = job.scheduleBuild2(0).waitForStart();
@@ -157,7 +157,7 @@ public class AgentBuildHistoryTest {
         // Create a Workflow (Pipeline) job
         WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "flow-node-project");
         job.setDefinition(new CpsFlowDefinition(
-                "node { powershell 'Write-Host \"Hello, World!\"' }", true));
+                "node { echo 'Hello, World!' }", true));
 
         // Build the project
         WorkflowRun build = job.scheduleBuild2(0).waitForStart();
@@ -310,13 +310,13 @@ public class AgentBuildHistoryTest {
         WorkflowJob job = jenkinsRule.createProject(WorkflowJob.class, "multi-agent-pipeline");
         job.setDefinition(new CpsFlowDefinition(
                 "node('agent1') {\n" +
-                        "    powershell 'Write-Host \"Running on agent1\"'\n" +
+                        "    echo 'Hello, World!'\n" +
                         "}\n" +
                         "node('agent2') {\n" +
-                        "    powershell 'Write-Host \"Running on agent2\"'\n" +
+                        "    echo 'Hello, World!'\n" +
                         "}\n" +
                         "node('agent1') {\n" +
-                        "    powershell 'Write-Host \"Running again on agent1\"'\n" +
+                        "    echo 'Hello, World!'\n" +
                         "}\n", true));
 
         // Build the project
