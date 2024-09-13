@@ -4,12 +4,15 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Action;
 import hudson.model.Computer;
-
-import java.util.*;
-
 import jenkins.model.TransientActionFactory;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Extension
 @Restricted(NoExternalUse.class)
