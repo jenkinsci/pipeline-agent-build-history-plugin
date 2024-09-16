@@ -8,11 +8,6 @@ import hudson.model.Job;
 import hudson.model.Node;
 import hudson.model.Run;
 import hudson.util.RunList;
-
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import jenkins.util.Timer;
 import org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode;
@@ -27,6 +22,12 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Restricted(NoExternalUse.class)
 public class AgentBuildHistory implements Action {
