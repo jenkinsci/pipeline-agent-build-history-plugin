@@ -170,3 +170,35 @@ window.abhDisplayExtendedBuildHistory = function(data) {
   }
   ts_refresh(table);
 };
+
+document.addEventListener("DOMContentLoaded", function () {
+  const pageSizeInput = document.getElementById("pageSizeInput");
+  const pageInput = document.getElementById("pageInput");
+
+  // Handle page size changes
+  if (pageSizeInput) {
+    pageSizeInput.addEventListener("change", function () {
+      const pageSize = pageSizeInput.value;
+      const page = 1; // Reset to the first page when page size changes
+      const sortColumn = new URLSearchParams(window.location.search).get('sortColumn') || it.defaultSortColumn;
+      const sortOrder = new URLSearchParams(window.location.search).get('sortOrder') || it.defaultSortOrder;
+
+      const newUrl = `${window.location.pathname}?page=${page}&pageSize=${pageSize}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`;
+      window.location.href = newUrl;
+    });
+  }
+
+  // Handle page input changes
+  if (pageInput) {
+    pageInput.addEventListener("change", function () {
+      const page = pageInput.value;
+      const pageSize = new URLSearchParams(window.location.search).get('pageSize') || it.entriesPerPage;
+      const sortColumn = new URLSearchParams(window.location.search).get('sortColumn') || it.defaultSortColumn;
+      const sortOrder = new URLSearchParams(window.location.search).get('sortOrder') || it.defaultSortOrder;
+
+      const newUrl = `${window.location.pathname}?page=${page}&pageSize=${pageSize}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`;
+      window.location.href = newUrl;
+    });
+  }
+});
+
