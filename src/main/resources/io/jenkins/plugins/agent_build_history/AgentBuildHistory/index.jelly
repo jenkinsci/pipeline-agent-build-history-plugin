@@ -40,9 +40,9 @@
       <j:set var="totalPages" value="${it.totalPages}"/>
       <j:set var="sortColumn" value="${request.getParameter('sortColumn') != null ? request.getParameter('sortColumn') : it.defaultSortColumn}"/>
       <j:set var="sortOrder" value="${request.getParameter('sortOrder') != null ? request.getParameter('sortOrder') : it.defaultSortOrder}"/>
-      <div class="pagination-container">
+      <div class="abh-pagination-container">
         <!-- Pagination Previous/Next Buttons -->
-        <nav aria-label="Page navigation" class="pagination">
+        <nav aria-label="Page navigation" class="abh-pagination">
           <!-- Previous button -->
           <j:if test="${page &gt; 1}">
             <a class="jenkins-button" tooltip="${%Previous}" href="${request.requestURI}?page=${page - 1}&amp;pageSize=${pageSize}&amp;sortColumn=${sortColumn}&amp;sortOrder=${sortOrder}" aria-label="Previous">
@@ -51,9 +51,9 @@
           </j:if>
 
           <!-- Page Input Field -->
-          <span class="page-label">Page</span>
-          <input type="number" id="pageInput" class="jenkins-input" min="1" max="${totalPages}" value="${page}"/>
-          <span class="page-label">of ${totalPages}</span>
+          <span class="abh-page-label">Page</span>
+          <input type="number" id="pageInput" class="jenkins-input" min="1" max="${totalPages}" value="${page}" data-sort-column="${sortColumn}" data-sort-order="${sortOrder}" data-page-size="${pageSize}"/>
+          <span class="abh-page-label">of ${totalPages}</span>
 
           <!-- Next button -->
           <j:if test="${page &lt; totalPages}">
@@ -64,9 +64,9 @@
         </nav>
 
         <!-- Page Size Input -->
-        <div class="page-size-selector">
+        <div class="abh-page-size-selector">
           <label for="pageSizeInput">Items per page:</label>
-          <input type="number" id="pageSizeInput" class="jenkins-input" min="1" value="${pageSize}"/>
+          <input type="number" id="pageSizeInput" class="jenkins-input" min="1" value="${pageSize}" data-sort-column="${sortColumn}" data-sort-order="${sortOrder}"/>
         </div>
       </div>
 

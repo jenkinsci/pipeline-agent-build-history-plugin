@@ -180,8 +180,8 @@ document.addEventListener("DOMContentLoaded", function () {
     pageSizeInput.addEventListener("change", function () {
       const pageSize = pageSizeInput.value;
       const page = 1; // Reset to the first page when page size changes
-      const sortColumn = new URLSearchParams(window.location.search).get('sortColumn') || it.defaultSortColumn;
-      const sortOrder = new URLSearchParams(window.location.search).get('sortOrder') || it.defaultSortOrder;
+      const sortColumn = pageSizeInput.getAttribute('data-sort-column');
+      const sortOrder = pageSizeInput.getAttribute('data-sort-order');
 
       const newUrl = `${window.location.pathname}?page=${page}&pageSize=${pageSize}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`;
       window.location.href = newUrl;
@@ -192,9 +192,9 @@ document.addEventListener("DOMContentLoaded", function () {
   if (pageInput) {
     pageInput.addEventListener("change", function () {
       const page = pageInput.value;
-      const pageSize = new URLSearchParams(window.location.search).get('pageSize') || it.entriesPerPage;
-      const sortColumn = new URLSearchParams(window.location.search).get('sortColumn') || it.defaultSortColumn;
-      const sortOrder = new URLSearchParams(window.location.search).get('sortOrder') || it.defaultSortOrder;
+      const pageSize = pageInput.getAttribute('data-page-size');
+      const sortColumn = pageInput.getAttribute('data-sort-column');
+      const sortOrder = pageInput.getAttribute('data-sort-order');
 
       const newUrl = `${window.location.pathname}?page=${page}&pageSize=${pageSize}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`;
       window.location.href = newUrl;
