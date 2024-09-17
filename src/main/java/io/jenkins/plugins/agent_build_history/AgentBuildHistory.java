@@ -101,16 +101,16 @@ public class AgentBuildHistory implements Action {
       int comparison = 0;
       switch(sortColumn){
         case "startTime":
-          long timeA = Long.parseLong(a.split(",")[2]);
-          long timeB = Long.parseLong(b.split(",")[2]);
+          long timeA = Long.parseLong(a.split(BuildHistoryFileManager.separator)[2]);
+          long timeB = Long.parseLong(b.split(BuildHistoryFileManager.separator)[2]);
           comparison = Long.compare(timeA, timeB);
           break;
         case "build":
-          comparison = a.split(",")[0].compareTo(b.split(",")[0]);
+          comparison = a.split(BuildHistoryFileManager.separator)[0].compareTo(b.split(BuildHistoryFileManager.separator)[0]);
           if (comparison == 0) {
             // Only compare build numbers if the job names are the same
-            int buildNumberA = Integer.parseInt(a.split(",")[1]);
-            int buildNumberB = Integer.parseInt(b.split(",")[1]);
+            int buildNumberA = Integer.parseInt(a.split(BuildHistoryFileManager.separator)[1]);
+            int buildNumberB = Integer.parseInt(b.split(BuildHistoryFileManager.separator)[1]);
             comparison = Integer.compare(buildNumberA, buildNumberB);
           }
           break;
@@ -125,7 +125,7 @@ public class AgentBuildHistory implements Action {
     List<AgentExecution> result = new ArrayList<>();
 
     for (String line : page) {
-      String[] parts = line.split(",");
+      String[] parts = line.split(BuildHistoryFileManager.separator);
       String jobName = parts[0];
       int buildNumber = Integer.parseInt(parts[1]);
       // Load execution using deserialization

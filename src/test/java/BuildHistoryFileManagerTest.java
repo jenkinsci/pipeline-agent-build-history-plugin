@@ -2,7 +2,6 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Run;
 import io.jenkins.plugins.agent_build_history.BuildHistoryFileManager;
-import io.jenkins.plugins.agent_build_history.AgentExecution;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -12,7 +11,9 @@ import java.io.File;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class BuildHistoryFileManagerTest {
 
@@ -43,7 +44,7 @@ public class BuildHistoryFileManagerTest {
         // Verify that the index file contains the correct entry
         List<String> indexEntries = BuildHistoryFileManager.readIndexFile(nodeName, storageDir.getAbsolutePath());
         assertEquals(1, indexEntries.size());
-        assertTrue("Index should contain the job and build number", indexEntries.get(0).contains(jobName + "," + buildNumber));
+        assertTrue("Index should contain the job and build number", indexEntries.get(0).contains(jobName + BuildHistoryFileManager.separator + buildNumber));
     }
 
     @Test
@@ -89,7 +90,7 @@ public class BuildHistoryFileManagerTest {
         // Verify that the renamed index file contains the correct entry
         List<String> indexEntries = BuildHistoryFileManager.readIndexFile(newNodeName, storageDir.getAbsolutePath());
         assertEquals(1, indexEntries.size());
-        assertTrue("Renamed index should contain the job and build number", indexEntries.get(0).contains(jobName + "," + buildNumber));
+        assertTrue("Renamed index should contain the job and build number", indexEntries.get(0).contains(jobName + BuildHistoryFileManager.separator + buildNumber));
     }
 
     @Test

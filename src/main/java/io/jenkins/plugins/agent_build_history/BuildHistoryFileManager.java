@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 public class BuildHistoryFileManager {
 
     private static final Logger LOGGER = Logger.getLogger(BuildHistoryFileManager.class.getName());
+    public static final String separator = ";";
 
     // Handle locks for different nodes
     private static final Map<String, Object> nodeLocks = new HashMap<>();
@@ -64,10 +65,10 @@ public class BuildHistoryFileManager {
             // Update index for the node
             File indexFile = new File(storageDir + "/" + nodeName + "_index" + ".txt");
             List<String> lines = readIndexFile(nodeName, storageDir);
-            boolean exists = lines.contains(run.getParent().getFullName() + "," + run.getNumber() + "," + run.getStartTimeInMillis());
+            boolean exists = lines.contains(run.getParent().getFullName() + separator + run.getNumber() + separator + run.getStartTimeInMillis());
             if (!exists) {
                 try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(indexFile, true), StandardCharsets.UTF_8))) {
-                    writer.write(run.getParent().getFullName() + "," + run.getNumber() + "," + run.getStartTimeInMillis());
+                    writer.write(run.getParent().getFullName() + separator + run.getNumber() + separator + run.getStartTimeInMillis());
                     writer.newLine();
                 } catch (IOException e) {
                     LOGGER.log(Level.WARNING, "Failed to update index for node " + nodeName, e);
@@ -100,7 +101,7 @@ public class BuildHistoryFileManager {
             File indexFile = new File(storageDir + "/" + nodeName + "_index.txt");
             try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(indexFile), StandardCharsets.UTF_8))) {
                 for (String line : indexLines) {
-                    if (!line.startsWith(jobName + "," + buildNumber + ",")) {
+                    if (!line.startsWith(jobName + separator + buildNumber + separator)) {
                         writer.write(line);
                         writer.newLine();
                     }
@@ -119,7 +120,7 @@ public class BuildHistoryFileManager {
                 List<String> indexLines = readIndexFile(nodeName, storageDir);
                 try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(storageDir + "/" + nodeName + "_index.txt"), StandardCharsets.UTF_8))) {
                     for (String line : indexLines) {
-                        if (!line.startsWith(jobName + ",")) {
+                        if (!line.startsWith(jobName + separator)) {
                             writer.write(line);
                             writer.newLine();
                         }
@@ -162,7 +163,7 @@ public class BuildHistoryFileManager {
                 List<String> indexLines = readIndexFile(nodeName, storageDir);
                 try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(storageDir + "/" + nodeName + "_index.txt"), StandardCharsets.UTF_8))) {
                     for (String line : indexLines) {
-                        if (line.startsWith(oldFullName + ",")) {
+                        if (line.startsWith(oldFullName + separator)) {
                             writer.write(newFullName + line.substring(oldFullName.length()));
                             writer.newLine();
                         } else {
