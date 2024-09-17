@@ -3,6 +3,7 @@ package io.jenkins.plugins.agent_build_history;
 import hudson.Extension;
 import hudson.util.ListBoxModel;
 import jenkins.model.GlobalConfiguration;
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.File;
@@ -24,13 +25,8 @@ public class AgentBuildHistoryConfig extends GlobalConfiguration {
     }
 
     private String getDefaultStorageDir() {
-        String jenkinsHome = System.getenv("JENKINS_HOME");
-        if (jenkinsHome != null && !jenkinsHome.isEmpty()) {
-            return jenkinsHome + File.separator + "agent_build_history_serialized_data";
-        } else {
-            LOGGER.warning("JENKINS_HOME environment variable is not set. Falling back to default path.");
-            return "/var/jenkins_home/agent_build_history_serialized_data"; // Default fallback if JENKINS_HOME is not set
-        }
+        String jenkinsRootDir = Jenkins.get().getRootDir().getAbsolutePath();
+            return jenkinsRootDir + File.separator + "io.jenkins.plugins.agent_build_history.serialized_data";
     }
 
     private void ensureStorageDir() {
