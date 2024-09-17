@@ -171,6 +171,12 @@ window.abhDisplayExtendedBuildHistory = function(data) {
   ts_refresh(table);
 };
 
+function setCookie(name, value) {
+  const expires = new Date();
+  expires.setFullYear(expires.getFullYear() + 1); // Cookie expires in 1 year
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/`;
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const pageSizeInput = document.getElementById("pageSizeInput");
   const pageInput = document.getElementById("pageInput");
@@ -179,6 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (pageSizeInput) {
     pageSizeInput.addEventListener("change", function () {
       const pageSize = pageSizeInput.value;
+      setCookie("pageSize", pageSize);
       const page = 1; // Reset to the first page when page size changes
       const sortColumn = pageSizeInput.getAttribute('data-sort-column');
       const sortOrder = pageSizeInput.getAttribute('data-sort-order');
@@ -200,5 +207,26 @@ document.addEventListener("DOMContentLoaded", function () {
       window.location.href = newUrl;
     });
   }
+  const sortLinks = document.querySelectorAll('.sortheader');
+    sortLinks.forEach(function (link) {
+      link.addEventListener('click', function (event) {
+        event.preventDefault();  // Prevent default link behavior
+
+        const urlParams = new URLSearchParams(link.search);
+        const sortColumn = urlParams.get('sortColumn');
+        const sortOrder = urlParams.get('sortOrder');
+
+        // Set cookies for sortColumn and sortOrder
+        setCookie("sortColumn", sortColumn);
+        setCookie("sortOrder", sortOrder);
+
+        // Redirect to the new URL with sorting parameters
+        const pageSize = pageSizeInput ? pageSizeInput.value : '20';
+        const page = pageInput ? pageInput.value : '1';
+
+        const newUrl = `${window.location.pathname}?page=${page}&pageSize=${pageSize}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`;
+        window.location.href = newUrl;
+      });
+    });
 });
 

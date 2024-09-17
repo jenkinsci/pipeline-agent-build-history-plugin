@@ -36,10 +36,10 @@
       <l:progressiveRendering handler="${it.handler}" callback="abhDisplayExtendedBuildHistory"/>
       <!-- Pagination Controls -->
       <j:set var="page" value="${request.getParameter('page') != null ? request.getParameter('page') : 1}"/>
-      <j:set var="pageSize" value="${request.getParameter('pageSize') != null ? request.getParameter('pageSize') : it.entriesPerPage}"/>
+      <j:set var="pageSize" value="${request.getParameter('pageSize') != null ? request.getParameter('pageSize') : h.getCookie(request, 'pageSize', '20')}"/>
       <j:set var="totalPages" value="${it.totalPages}"/>
-      <j:set var="sortColumn" value="${request.getParameter('sortColumn') != null ? request.getParameter('sortColumn') : it.defaultSortColumn}"/>
-      <j:set var="sortOrder" value="${request.getParameter('sortOrder') != null ? request.getParameter('sortOrder') : it.defaultSortOrder}"/>
+      <j:set var="sortColumn" value="${request.getParameter('sortColumn') != null ? request.getParameter('sortColumn') : h.getCookie(request, 'sortColumn', 'startTime')}"/>
+      <j:set var="sortOrder" value="${request.getParameter('sortOrder') != null ? request.getParameter('sortOrder') : h.getCookie(request, 'sortOrder', 'desc')}"/>
       <div class="abh-pagination-container">
         <!-- Pagination Previous/Next Buttons -->
         <nav aria-label="Page navigation" class="abh-pagination">
@@ -99,8 +99,12 @@
                 ${%Started}
                 <j:if test="${sortColumn == 'startTime'}">
                   <j:choose>
-                    <j:when test="${sortOrder == 'asc'}"> <span class="sortarrow" style="font-size: large;">  ↑</span> <!-- Up arrow for ascending order --></j:when>
-                    <j:otherwise> <span class="sortarrow" style="font-size: large;">  ↓</span> <!-- Down arrow for descending order --></j:otherwise>
+                    <j:when test="${sortOrder == 'asc'}">
+                      <span class="sortarrow" style="font-size: large;">  ↑</span> <!-- Up arrow for ascending order -->
+                    </j:when>
+                    <j:otherwise>
+                      <span class="sortarrow" style="font-size: large;">  ↓</span> <!-- Down arrow for descending order -->
+                    </j:otherwise>
                   </j:choose>
                 </j:if>
               </a>

@@ -5,14 +5,5 @@
         <f:textbox />
     </f:entry>
     <p class="info">Note: On storage directory change, old data must be removed manually. A new synchronization will start on the next access to the Agent History.</p>
-    <f:entry title="Default Entries per Page" field="entriesPerPage">
-        <f:number min="1" default="30"/>
-    </f:entry>
-    <f:entry title="Default Sort Column">
-        <f:select field="defaultSortColumn"/>
-    </f:entry>
-    <f:entry title="Default Sort Order">
-        <f:select field="defaultSortOrder"/>
-    </f:entry>
 </f:section>
 </j:jelly>

@@ -23,6 +23,7 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.servlet.http.Cookie;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +42,18 @@ public class AgentBuildHistory implements Action {
   public AgentBuildHistory(Computer computer) {
     this.computer = computer;
     LOGGER.log(Level.CONFIG, () -> "Creating AgentBuildHistory for " + computer.getName());
+  }
+
+  public static String getCookieValue(StaplerRequest req, String name, String defaultValue) {
+    Cookie[] cookies = req.getCookies();
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        if (cookie.getName().equals(name)) {
+          return cookie.getValue();
+        }
+      }
+    }
+    return defaultValue; // Fallback to default if cookie not found
   }
 
   /*
@@ -75,9 +88,9 @@ public class AgentBuildHistory implements Action {
     //Get Parameters from URL
     StaplerRequest req = Stapler.getCurrentRequest();
     int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
-    int pageSize = req.getParameter("pageSize") != null ? Integer.parseInt(req.getParameter("pageSize")) : AgentBuildHistoryConfig.get().getEntriesPerPage();
-    String sortColumn = req.getParameter("sortColumn") != null ? req.getParameter("sortColumn") : AgentBuildHistoryConfig.get().getDefaultSortColumn();
-    String sortOrder = req.getParameter("sortOrder") != null ? req.getParameter("sortOrder") : AgentBuildHistoryConfig.get().getDefaultSortOrder();
+    int pageSize = req.getParameter("pageSize") != null ? Integer.parseInt(req.getParameter("pageSize")) : Integer.parseInt(getCookieValue(req, "pageSize", "20"));
+    String sortColumn = req.getParameter("sortColumn") != null ? req.getParameter("sortColumn") : getCookieValue(req, "sortColumn", "startTime");
+    String sortOrder = req.getParameter("sortOrder") != null ? req.getParameter("sortOrder") : getCookieValue(req, "sortOrder", "desc");
     //Update totalPages depending on pageSize
     int totalEntries = BuildHistoryFileManager.readIndexFile(computer.getName(), AgentBuildHistoryConfig.get().getStorageDir()).size();
     totalPages = (int) Math.ceil((double) totalEntries / pageSize);
@@ -222,24 +235,6 @@ public class AgentBuildHistory implements Action {
 
   public static void startFlowNodeExecution(Computer c, WorkflowRun run, FlowNode node) {
     BuildHistoryFileManager.addRunToNodeIndex(c.getName(), run, AgentBuildHistoryConfig.get().getStorageDir());
-  }
-  /*
-  used by jelly
-   */
-  public int getEntriesPerPage() {
-    return AgentBuildHistoryConfig.get().getEntriesPerPage();
-  }
-  /*
-    used by jelly
-   */
-  public String getDefaultSortColumn() {
-    return AgentBuildHistoryConfig.get().getDefaultSortColumn();
-  }
-  /*
-    used by jelly
-   */
-  public String getDefaultSortOrder() {
-    return AgentBuildHistoryConfig.get().getDefaultSortOrder();
   }
 
   @Override

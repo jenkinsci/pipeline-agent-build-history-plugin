@@ -1,7 +1,6 @@
 package io.jenkins.plugins.agent_build_history;
 
 import hudson.Extension;
-import hudson.util.ListBoxModel;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -15,9 +14,6 @@ public class AgentBuildHistoryConfig extends GlobalConfiguration {
     private static final Logger LOGGER = Logger.getLogger(AgentBuildHistoryConfig.class.getName());
 
     private String storageDir = getDefaultStorageDir();
-    private int entriesPerPage = 20;
-    private String defaultSortColumn = "startTime";
-    private String defaultSortOrder = "desc";
 
     public AgentBuildHistoryConfig() {
         load(); // Load the persisted configuration
@@ -61,53 +57,9 @@ public class AgentBuildHistoryConfig extends GlobalConfiguration {
         }
     }
 
-    public int getEntriesPerPage() {
-        return entriesPerPage;
-    }
-
-    @DataBoundSetter
-    public void setEntriesPerPage(int entriesPerPage) {
-        this.entriesPerPage = entriesPerPage;
-        save(); // Save the configuration
-    }
-
-    public String getDefaultSortColumn() {
-        return defaultSortColumn;
-    }
-
-    @DataBoundSetter
-    public void setDefaultSortColumn(String defaultSortColumn) {
-        this.defaultSortColumn = defaultSortColumn;
-        save(); // Save the configuration
-    }
-
-    public String getDefaultSortOrder() {
-        return defaultSortOrder;
-    }
-
-    @DataBoundSetter
-    public void setDefaultSortOrder(String defaultSortOrder) {
-        this.defaultSortOrder = defaultSortOrder;
-        save(); // Save the configuration
-    }
-
     // Static method to access the configuration instance
     public static AgentBuildHistoryConfig get() {
         return GlobalConfiguration.all().get(AgentBuildHistoryConfig.class);
-    }
-
-    public ListBoxModel doFillDefaultSortColumnItems() {
-        ListBoxModel items = new ListBoxModel();
-        items.add("Start Time", "startTime");
-        items.add("Build Name and Build Number", "build");
-        return items;
-    }
-
-    public ListBoxModel doFillDefaultSortOrderItems() {
-        ListBoxModel items = new ListBoxModel();
-        items.add("Ascending", "asc");
-        items.add("Descending", "desc");
-        return items;
     }
 }
 
