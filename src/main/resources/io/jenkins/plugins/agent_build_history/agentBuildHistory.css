@@ -96,21 +96,26 @@
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
-  margin-top: 20px;
+  margin-bottom: 5px;
   gap: 20px;
 }
 
 .abh-pagination {
   display: flex;
   align-items: center;
+  gap: 5px;
 }
 
 .abh-page-size-selector {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
+}
+
+.abh-page-input {
+  max-width: 80px;
 }
 
 .abh-page-label {
-  margin: 0 5px;
+  min-width: fit-content;
 }

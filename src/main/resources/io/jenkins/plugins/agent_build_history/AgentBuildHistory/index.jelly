@@ -52,7 +52,7 @@
 
           <!-- Page Input Field -->
           <span class="abh-page-label">Page</span>
-          <input type="number" id="pageInput" class="jenkins-input" min="1" max="${totalPages}" value="${page}" data-sort-column="${sortColumn}" data-sort-order="${sortOrder}" data-page-size="${pageSize}"/>
+          <input type="number" id="pageInput" class="jenkins-input abh-page-input" min="1" max="${totalPages}" value="${page}" data-sort-column="${sortColumn}" data-sort-order="${sortOrder}" data-page-size="${pageSize}"/>
           <span class="abh-page-label">of ${totalPages}</span>
 
           <!-- Next button -->
@@ -65,8 +65,8 @@
 
         <!-- Page Size Input -->
         <div class="abh-page-size-selector">
-          <label for="pageSizeInput">Items per page:</label>
-          <input type="number" id="pageSizeInput" class="jenkins-input" min="1" value="${pageSize}" data-sort-column="${sortColumn}" data-sort-order="${sortOrder}"/>
+          <label class="abh-page-label" for="pageSizeInput">Items per page:</label>
+          <input type="number" id="pageSizeInput" class="jenkins-input abh-page-input" min="1" value="${pageSize}" data-sort-column="${sortColumn}" data-sort-order="${sortOrder}"/>
         </div>
       </div>
 
