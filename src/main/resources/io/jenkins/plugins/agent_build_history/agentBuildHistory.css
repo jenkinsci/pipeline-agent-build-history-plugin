@@ -90,3 +90,32 @@
   gap: 18px;
   padding: 0 15px;
 }
+
+.abh-pagination-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 5px;
+  gap: 20px;
+}
+
+.abh-pagination {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.abh-page-size-selector {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.abh-page-input {
+  max-width: 80px;
+}
+
+.abh-page-label {
+  min-width: fit-content;
+}

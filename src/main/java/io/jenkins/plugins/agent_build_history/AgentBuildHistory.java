@@ -1,28 +1,14 @@
 package io.jenkins.plugins.agent_build_history;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
 import hudson.model.Computer;
-import hudson.model.Item;
 import hudson.model.Job;
 import hudson.model.Node;
 import hudson.model.Run;
-import hudson.model.listeners.ItemListener;
-import hudson.model.listeners.RunListener;
 import hudson.util.RunList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jenkins.model.Jenkins;
-import jenkins.model.NodeListener;
 import jenkins.util.Timer;
 import org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
@@ -34,58 +20,40 @@ import org.jenkinsci.plugins.workflow.support.actions.WorkspaceActionImpl;
 import org.jenkinsci.plugins.workflow.support.steps.ExecutorStep;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest;
+
+import javax.servlet.http.Cookie;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Restricted(NoExternalUse.class)
 public class AgentBuildHistory implements Action {
 
   private static final Logger LOGGER = Logger.getLogger(AgentBuildHistory.class.getName());
-
-  private static final Map<String, Set<AgentExecution>> agentExecutions = new HashMap<>();
-  private static final Map<Run<?, ?>, AgentExecution> agentExecutionsMap = new HashMap<>();
-
   private final Computer computer;
-
+  private int totalPages = 1;
   private static boolean loaded = false;
-  
   private static boolean loadingComplete = false;
-
-  @Extension
-  public static class HistoryRunListener extends RunListener<Run<?, ?>> {
-
-    @Override
-    public void onDeleted(Run run) {
-      for (Set<AgentExecution> executions: agentExecutions.values()) {
-        executions.removeIf(exec -> run == exec.getRun());
-      }
-      agentExecutionsMap.remove(run);
-    }
-  }
-
-  @Extension
-  public static class HistoryItemListener extends ItemListener {
-
-    @Override
-    public void onDeleted(Item item) {
-      if (item instanceof Job) {
-        for (Set<AgentExecution> executions: agentExecutions.values()) {
-          executions.removeIf( exec -> exec.getRun().getParent() == item);
-        }
-        agentExecutionsMap.keySet().removeIf(key -> key.getParent() == item);
-      }
-    }
-  }
-
-  @Extension
-  public static class HistoryNodeListener extends NodeListener {
-
-    @Override
-    protected void onDeleted(@NonNull Node node) {
-      agentExecutions.remove(node.getNodeName());
-    }
-  }
 
   public AgentBuildHistory(Computer computer) {
     this.computer = computer;
+    LOGGER.log(Level.CONFIG, () -> "Creating AgentBuildHistory for " + computer.getName());
+  }
+
+  public static String getCookieValue(StaplerRequest req, String name, String defaultValue) {
+    Cookie[] cookies = req.getCookies();
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        if (cookie.getName().equals(name)) {
+          return cookie.getValue();
+        }
+      }
+    }
+    return defaultValue; // Fallback to default if cookie not found
   }
 
   /*
@@ -94,9 +62,20 @@ public class AgentBuildHistory implements Action {
   public Computer getComputer() {
     return computer;
   }
-
+  /*
+   * used by jelly
+   */
   public boolean isLoadingComplete() {
     return loadingComplete;
+  }
+
+  public static void setLoaded(boolean loaded) {
+    AgentBuildHistory.loaded = loaded;
+    AgentBuildHistory.loadingComplete = loaded;
+  }
+
+  public int getTotalPages() {
+    return totalPages;
   }
 
   @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
@@ -106,21 +85,125 @@ public class AgentBuildHistory implements Action {
       Timer.get().schedule(AgentBuildHistory::load, 0, TimeUnit.SECONDS);
     }
     RunListTable runListTable = new RunListTable(computer.getName());
-    runListTable.setRuns(getExecutions());
+    //Get Parameters from URL
+    StaplerRequest req = Stapler.getCurrentRequest();
+    int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
+    int pageSize = req.getParameter("pageSize") != null ? Integer.parseInt(req.getParameter("pageSize")) : Integer.parseInt(getCookieValue(req, "pageSize", "20"));
+    String sortColumn = req.getParameter("sortColumn") != null ? req.getParameter("sortColumn") : getCookieValue(req, "sortColumn", "startTime");
+    String sortOrder = req.getParameter("sortOrder") != null ? req.getParameter("sortOrder") : getCookieValue(req, "sortOrder", "desc");
+    //Update totalPages depending on pageSize
+    int totalEntries = BuildHistoryFileManager.readIndexFile(computer.getName(), AgentBuildHistoryConfig.get().getStorageDir()).size();
+    totalPages = (int) Math.ceil((double) totalEntries / pageSize);
+
+    LOGGER.finer("Getting runs for node: " + computer.getName() + " page: " + page + " pageSize: " + pageSize + " sortColumn: " + sortColumn + " sortOrder: " + sortOrder);
+
+    int start = (page-1)*pageSize;
+    runListTable.setRuns(getExecutionsForNode(computer.getName(), start, pageSize, sortColumn, sortOrder));
     return  runListTable;
   }
 
-  private static void load() {
-    LOGGER.log(Level.FINE, () -> "Starting to load all runs");
-    RunList<Run<?, ?>> runList = RunList.fromJobs((Iterable) Jenkins.get().allItems(Job.class));
-    runList.forEach(run -> {
-      LOGGER.log(Level.FINER, () -> "Loading run " + run.getFullDisplayName());
-      AgentExecution execution = getAgentExecution(run);
+  public List<AgentExecution> getExecutionsForNode(String nodeName, int start, int limit, String sortColumn, String sortOrder) {
+    String storageDir = AgentBuildHistoryConfig.get().getStorageDir();
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile(nodeName, storageDir);
+    LOGGER.finer("Found " + indexLines.size() + " entries for node " + nodeName);
+    if (indexLines.isEmpty()) {
+      return List.of();
+    }
+    // Sort index lines based on start time or build
+    indexLines.sort((a, b) -> {
+      int comparison = 0;
+      switch(sortColumn){
+        case "startTime":
+          long timeA = Long.parseLong(a.split(BuildHistoryFileManager.separator)[2]);
+          long timeB = Long.parseLong(b.split(BuildHistoryFileManager.separator)[2]);
+          comparison = Long.compare(timeA, timeB);
+          break;
+        case "build":
+          comparison = a.split(BuildHistoryFileManager.separator)[0].compareTo(b.split(BuildHistoryFileManager.separator)[0]);
+          if (comparison == 0) {
+            // Only compare build numbers if the job names are the same
+            int buildNumberA = Integer.parseInt(a.split(BuildHistoryFileManager.separator)[1]);
+            int buildNumberB = Integer.parseInt(b.split(BuildHistoryFileManager.separator)[1]);
+            comparison = Integer.compare(buildNumberA, buildNumberB);
+          }
+          break;
+        default:
+          comparison = 0;
+      }
+      return sortOrder.equals("asc") ? comparison : -comparison;
+    });
+    // Apply pagination
+    int end = Math.min(start + limit, indexLines.size());
+    List<String> page = indexLines.subList(start, end);
+    List<AgentExecution> result = new ArrayList<>();
+
+    for (String line : page) {
+      String[] parts = line.split(BuildHistoryFileManager.separator);
+      String jobName = parts[0];
+      int buildNumber = Integer.parseInt(parts[1]);
+      // Load execution using deserialization
+      AgentExecution execution = loadSingleExecution(jobName, buildNumber);
+      if (execution != null) {
+        result.add(execution);
+      }
+    }
+    LOGGER.finer("Returning " + result.size() + " entries for node " + nodeName);
+    return result;
+  }
+
+    public static AgentExecution loadSingleExecution(String jobName, int buildNumber) {
+      Job<?, ?> job = Jenkins.get().getItemByFullName(jobName, Job.class);
+      Run<?, ?> run = null;
+      if (job != null) {
+        run = job.getBuildByNumber(buildNumber);
+      }
+      if (run == null) {
+          LOGGER.info("Run not found for " + jobName + " #" + buildNumber);
+          return null;
+      }
+      LOGGER.finer("Loading run " + run.getFullDisplayName());
+      AgentExecution execution = new AgentExecution(run);
+
       if (run instanceof AbstractBuild) {
         Node node = ((AbstractBuild<?, ?>) run).getBuiltOn();
         if (node != null) {
-          Set<AgentExecution> executions = loadExecutions(node.getNodeName());
-          executions.add(execution);
+          LOGGER.finer("Loading AbstractBuild on node: " + node.getNodeName());
+          return execution;
+        }
+      } else if (run instanceof WorkflowRun) {
+        WorkflowRun wfr = (WorkflowRun) run;
+        LOGGER.finer("Loading WorkflowRun: " + wfr.getFullDisplayName());
+        FlowExecution flowExecution = wfr.getExecution();
+        if (flowExecution != null) {
+          for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
+            if (! (flowNode instanceof StepStartNode)) {
+              continue;
+            }
+            for (WorkspaceActionImpl action : flowNode.getActions(WorkspaceActionImpl.class)) {
+              StepStartNode startNode = (StepStartNode) flowNode;
+              StepDescriptor descriptor = startNode.getDescriptor();
+              if (descriptor instanceof ExecutorStep.DescriptorImpl) {
+                String nodeName = action.getNode();
+                execution.addFlowNode(flowNode, nodeName);
+                LOGGER.finer("Loading WorkflowRun FlowNode on node: " + nodeName);
+              }
+            }
+          }
+        }
+      }
+      return execution;
+    }
+
+  private static void load() {
+    LOGGER.log(Level.INFO, () -> "Starting to synchronize all runs");
+    RunList<Run<?, ?>> runList = RunList.fromJobs((Iterable) Jenkins.get().allItems(Job.class));
+    runList.forEach(run -> {
+      LOGGER.finer("Loading run " + run.getFullDisplayName());
+
+      if (run instanceof AbstractBuild) {
+        Node node = ((AbstractBuild<?, ?>) run).getBuiltOn();
+        if (node != null) {
+          BuildHistoryFileManager.addRunToNodeIndex(node.getNodeName(), run, AgentBuildHistoryConfig.get().getStorageDir());
         }
       } else if (run instanceof WorkflowRun) {
         WorkflowRun wfr = (WorkflowRun) run;
@@ -135,9 +218,7 @@ public class AgentBuildHistory implements Action {
               StepDescriptor descriptor = startNode.getDescriptor();
               if (descriptor instanceof ExecutorStep.DescriptorImpl) {
                 String nodeName = action.getNode();
-                execution.addFlowNode(flowNode, nodeName);
-                Set<AgentExecution> executions = loadExecutions(nodeName);
-                executions.add(execution);
+                BuildHistoryFileManager.addRunToNodeIndex(nodeName, run, AgentBuildHistoryConfig.get().getStorageDir());
               }
             }
           }
@@ -145,46 +226,15 @@ public class AgentBuildHistory implements Action {
       }
     });
     loadingComplete = true;
-  }
-
-  private static Set<AgentExecution> loadExecutions(String computerName) {
-    Set<AgentExecution> executions = agentExecutions.get(computerName);
-    if (executions == null) {
-      LOGGER.log(Level.FINER, () -> "Creating executions for computer " + computerName);
-      executions = Collections.synchronizedSet(new TreeSet<>());
-      agentExecutions.put(computerName, executions);
-    }
-    return executions;
-  }
-
-  /* use by jelly */
-  public Set<AgentExecution> getExecutions() {
-    Set<AgentExecution> executions = agentExecutions.get(computer.getName());
-    if (executions == null) {
-      return Collections.emptySet();
-    }
-    return Collections.unmodifiableSet(new TreeSet<>(executions));
-  }
-
-  @NonNull
-  private static AgentExecution getAgentExecution(Run<?, ?> run) {
-    AgentExecution exec = agentExecutionsMap.get(run);
-    if (exec == null) {
-      LOGGER.log(Level.FINER, () -> "Creating execution for run " + run.getFullDisplayName());
-      exec = new AgentExecution(run);
-      agentExecutionsMap.put(run, exec);
-    }
-    return exec;
+    LOGGER.log(Level.INFO, () -> "Synchronizing all runs complete");
   }
 
   public static void startJobExecution(Computer c, Run<?, ?> run) {
-    loadExecutions(c.getName()).add(getAgentExecution(run));
+    BuildHistoryFileManager.addRunToNodeIndex(c.getName(), run, AgentBuildHistoryConfig.get().getStorageDir());
   }
 
   public static void startFlowNodeExecution(Computer c, WorkflowRun run, FlowNode node) {
-    AgentExecution exec = getAgentExecution(run);
-    exec.addFlowNode(node, c.getName());
-    loadExecutions(c.getName()).add(exec);
+    BuildHistoryFileManager.addRunToNodeIndex(c.getName(), run, AgentBuildHistoryConfig.get().getStorageDir());
   }
 
   @Override

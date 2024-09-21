@@ -61,6 +61,9 @@ window.abhDisplayExtendedBuildHistory = function(data) {
     const run = data[x];
     const tr = document.createElement("tr");
 
+    // Set a data attribute for sorting by startTimeInMillis
+    tr.setAttribute("data-start-time", run.startTimeInMillis);
+
     let td1 = document.createElement("td");
     td1.setAttribute("data", run.iconColorOrdinal);
     td1.classList.add("jenkins-table__cell--tight", "jenkins-table__icon", "abh-status");
@@ -95,6 +98,9 @@ window.abhDisplayExtendedBuildHistory = function(data) {
 
     let tdMessage = document.createElement("td");
     tdMessage.innerText = run.shortDescription;
+
+    let tdStarted = document.createElement("td");
+    tdStarted.innerText = run.startTimeReadable;
 
     let tdTimeSince = document.createElement("td");
     let tdDuration = document.createElement("td");
@@ -152,6 +158,7 @@ window.abhDisplayExtendedBuildHistory = function(data) {
     tdConsole.appendChild(div2);
 
     tr.appendChild(tdMessage);
+    tr.appendChild(tdStarted);
     tr.appendChild(tdTimeSince);
     tr.appendChild(tdDuration);
     tr.appendChild(tdStatus);
@@ -163,3 +170,63 @@ window.abhDisplayExtendedBuildHistory = function(data) {
   }
   ts_refresh(table);
 };
+
+function setCookie(name, value) {
+  const expires = new Date();
+  expires.setFullYear(expires.getFullYear() + 1); // Cookie expires in 1 year
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/`;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const pageSizeInput = document.getElementById("pageSizeInput");
+  const pageInput = document.getElementById("pageInput");
+
+  // Handle page size changes
+  if (pageSizeInput) {
+    pageSizeInput.addEventListener("change", function () {
+      const pageSize = pageSizeInput.value;
+      setCookie("pageSize", pageSize);
+      const page = 1; // Reset to the first page when page size changes
+      const sortColumn = pageSizeInput.getAttribute('data-sort-column');
+      const sortOrder = pageSizeInput.getAttribute('data-sort-order');
+
+      const newUrl = `${window.location.pathname}?page=${page}&pageSize=${pageSize}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`;
+      window.location.href = newUrl;
+    });
+  }
+
+  // Handle page input changes
+  if (pageInput) {
+    pageInput.addEventListener("change", function () {
+      const page = pageInput.value;
+      const pageSize = pageInput.getAttribute('data-page-size');
+      const sortColumn = pageInput.getAttribute('data-sort-column');
+      const sortOrder = pageInput.getAttribute('data-sort-order');
+
+      const newUrl = `${window.location.pathname}?page=${page}&pageSize=${pageSize}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`;
+      window.location.href = newUrl;
+    });
+  }
+  const sortLinks = document.querySelectorAll('.sortheader');
+    sortLinks.forEach(function (link) {
+      link.addEventListener('click', function (event) {
+        event.preventDefault();  // Prevent default link behavior
+
+        const urlParams = new URLSearchParams(link.search);
+        const sortColumn = urlParams.get('sortColumn');
+        const sortOrder = urlParams.get('sortOrder');
+
+        // Set cookies for sortColumn and sortOrder
+        setCookie("sortColumn", sortColumn);
+        setCookie("sortOrder", sortOrder);
+
+        // Redirect to the new URL with sorting parameters
+        const pageSize = pageSizeInput ? pageSizeInput.value : '20';
+        const page = pageInput ? pageInput.value : '1';
+
+        const newUrl = `${window.location.pathname}?page=${page}&pageSize=${pageSize}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`;
+        window.location.href = newUrl;
+      });
+    });
+});
+
