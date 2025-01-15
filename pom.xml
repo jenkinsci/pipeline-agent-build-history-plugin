@@ -34,7 +34,9 @@
 
   <properties>
     <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.version>2.440.3</jenkins.version>
+    <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
+    <jenkins.baseline>2.440</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
     <gitHubRepo>jenkinsci/pipeline-agent-build-history-plugin</gitHubRepo>
   </properties>
 
@@ -42,7 +44,7 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.440.x</artifactId>
+        <artifactId>bom-${jenkins.baseline}.x</artifactId>
         <version>3358.vea_fa_1f41504d</version>
         <type>pom</type>
         <scope>import</scope>
