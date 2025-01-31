@@ -21,9 +21,9 @@ import org.jenkinsci.plugins.workflow.support.steps.ExecutorStep;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +44,7 @@ public class AgentBuildHistory implements Action {
     LOGGER.log(Level.CONFIG, () -> "Creating AgentBuildHistory for " + computer.getName());
   }
 
-  public static String getCookieValue(StaplerRequest req, String name, String defaultValue) {
+  public static String getCookieValue(StaplerRequest2 req, String name, String defaultValue) {
     Cookie[] cookies = req.getCookies();
     if (cookies != null) {
       for (Cookie cookie : cookies) {
@@ -86,7 +86,7 @@ public class AgentBuildHistory implements Action {
     }
     RunListTable runListTable = new RunListTable(computer.getName());
     //Get Parameters from URL
-    StaplerRequest req = Stapler.getCurrentRequest();
+    StaplerRequest2 req = Stapler.getCurrentRequest2();
     int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
     int pageSize = req.getParameter("pageSize") != null ? Integer.parseInt(req.getParameter("pageSize")) : Integer.parseInt(getCookieValue(req, "pageSize", "20"));
     String sortColumn = req.getParameter("sortColumn") != null ? req.getParameter("sortColumn") : getCookieValue(req, "sortColumn", "startTime");
