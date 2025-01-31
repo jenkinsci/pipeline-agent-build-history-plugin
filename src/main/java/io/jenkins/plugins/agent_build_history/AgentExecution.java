@@ -5,8 +5,8 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
 import hudson.model.Run;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Objects;
 import java.util.Set;
@@ -207,7 +207,7 @@ public class AgentExecution implements Comparable<AgentExecution> {
     }
 
     public String getStartTimeString() {
-      return Util.XS_DATETIME_FORMATTER.format(new Date(startTime));
+      return Util.XS_DATETIME_FORMATTER2.format(Instant.ofEpochMilli(startTime));
     }
 
     public String getStartTimeSince() {
