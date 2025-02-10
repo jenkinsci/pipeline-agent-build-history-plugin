@@ -8,8 +8,15 @@ import hudson.model.Job;
 import hudson.model.Node;
 import hudson.model.Run;
 import hudson.util.RunList;
+import jakarta.servlet.http.Cookie;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import jenkins.util.Timer;
+import org.jenkinsci.plugins.workflow.actions.BodyInvocationAction;
 import org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
@@ -22,13 +29,6 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest2;
-
-import jakarta.servlet.http.Cookie;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @Restricted(NoExternalUse.class)
 public class AgentBuildHistory implements Action {
@@ -170,22 +170,33 @@ public class AgentBuildHistory implements Action {
           LOGGER.finer("Loading AbstractBuild on node: " + node.getNodeName());
           return execution;
         }
-      } else if (run instanceof WorkflowRun) {
-        WorkflowRun wfr = (WorkflowRun) run;
-        LOGGER.finer("Loading WorkflowRun: " + wfr.getFullDisplayName());
+      } else if (run instanceof WorkflowRun wfr) {
+          LOGGER.finer("Loading WorkflowRun: " + wfr.getFullDisplayName());
         FlowExecution flowExecution = wfr.getExecution();
         if (flowExecution != null) {
           for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
-            if (! (flowNode instanceof StepStartNode)) {
+            if (! (flowNode instanceof StepStartNode startNode)) {
               continue;
             }
-            for (WorkspaceActionImpl action : flowNode.getActions(WorkspaceActionImpl.class)) {
-              StepStartNode startNode = (StepStartNode) flowNode;
-              StepDescriptor descriptor = startNode.getDescriptor();
-              if (descriptor instanceof ExecutorStep.DescriptorImpl) {
-                String nodeName = action.getNode();
-                execution.addFlowNode(flowNode, nodeName);
-                LOGGER.finer("Loading WorkflowRun FlowNode on node: " + nodeName);
+            StepDescriptor descriptor = startNode.getDescriptor();
+            if (descriptor instanceof ExecutorStep.DescriptorImpl) {
+              if (!flowNode.getActions(BodyInvocationAction.class).isEmpty()) {
+                for (FlowNode parent: flowNode.getParents()) {
+                  if (! (parent instanceof StepStartNode parentNode)) {
+                    continue;
+                  }
+
+                  StepDescriptor parentDescriptor = parentNode.getDescriptor();
+                  if (parentDescriptor instanceof ExecutorStep.DescriptorImpl) {
+                    WorkspaceActionImpl action = parentNode.getAction(WorkspaceActionImpl.class);
+                    if (action != null) {
+                      String nodeName = action.getNode();
+                      execution.addFlowNode(flowNode, nodeName);
+                      LOGGER.finer("Loading WorkflowRun FlowNode on node: " + nodeName);
+                    }
+                  }
+                  break;
+                }
               }
             }
           }
@@ -210,11 +221,10 @@ public class AgentBuildHistory implements Action {
         FlowExecution flowExecution = wfr.getExecution();
         if (flowExecution != null) {
           for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
-            if (! (flowNode instanceof StepStartNode)) {
+            if (! (flowNode instanceof StepStartNode startNode)) {
               continue;
             }
             for (WorkspaceActionImpl action : flowNode.getActions(WorkspaceActionImpl.class)) {
-              StepStartNode startNode = (StepStartNode) flowNode;
               StepDescriptor descriptor = startNode.getDescriptor();
               if (descriptor instanceof ExecutorStep.DescriptorImpl) {
                 String nodeName = action.getNode();

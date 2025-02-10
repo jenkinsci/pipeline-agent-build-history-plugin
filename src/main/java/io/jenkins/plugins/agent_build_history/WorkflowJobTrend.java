@@ -5,8 +5,12 @@ import hudson.model.Cause;
 import hudson.model.Node;
 import hudson.model.Result;
 import hudson.model.Run;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import jenkins.console.ConsoleUrlProvider;
 import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.workflow.actions.BodyInvocationAction;
 import org.jenkinsci.plugins.workflow.actions.TimingAction;
 import org.jenkinsci.plugins.workflow.cps.actions.ArgumentsActionImpl;
 import org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode;
@@ -21,10 +25,6 @@ import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.support.actions.WorkspaceActionImpl;
 import org.jenkinsci.plugins.workflow.support.steps.ExecutorStep;
 import org.kohsuke.accmod.restrictions.suppressions.SuppressRestrictedWarnings;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class WorkflowJobTrend {
 
@@ -212,47 +212,56 @@ public class WorkflowJobTrend {
         boolean include = !filterByAgent;
         if (flowExecution != null) {
             for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
-                if (! (flowNode instanceof StepStartNode)) {
+                if (! (flowNode instanceof StepStartNode startNode)) {
                   continue;
                 }
-                WorkspaceActionImpl action = flowNode.getAction(WorkspaceActionImpl.class);
-                if (action != null) {
-                    NodeExecution nodeExecution = new NodeExecution();
-                    StepStartNode startNode = (StepStartNode) flowNode;
-                    StepDescriptor descriptor = startNode.getDescriptor();
-                    if (descriptor instanceof ExecutorStep.DescriptorImpl) {
-                        String nodeName = action.getNode();
-                        if (nodeName.equals("")) {
-                            if (filterByAgent && agentFilter.equals("built-in")) {
-                                include = true;
+                StepDescriptor descriptor = startNode.getDescriptor();
+                if (descriptor instanceof ExecutorStep.DescriptorImpl) {
+                    if (!flowNode.getActions(BodyInvocationAction.class).isEmpty()) {
+                        for (FlowNode parent : flowNode.getParents()) {
+                            if (!(parent instanceof StepStartNode parentNode)) {
+                                continue;
                             }
-                            nodeExecution.builtOn = "(built-in)";
-                            nodeExecution.builtOnStr = hudson.model.Messages.Hudson_Computer_DisplayName();
-                        } else {
-                            Node node = Jenkins.get().getNode(nodeName);
-                            if (node != null) {
-                                if (filterByAgent && agentFilter.equals(node.getNodeName())) {
-                                    include = true;
+                            StepDescriptor parentDescriptor = parentNode.getDescriptor();
+                            if (parentDescriptor instanceof ExecutorStep.DescriptorImpl) {
+                                WorkspaceActionImpl action = parentNode.getAction(WorkspaceActionImpl.class);
+                                if (action != null) {
+                                    NodeExecution nodeExecution = new NodeExecution();
+                                    String nodeName = action.getNode();
+                                    if (nodeName.isEmpty()) {
+                                        if (filterByAgent && agentFilter.equals("built-in")) {
+                                            include = true;
+                                        }
+                                        nodeExecution.builtOn = "(built-in)";
+                                        nodeExecution.builtOnStr = hudson.model.Messages.Hudson_Computer_DisplayName();
+                                    } else {
+                                        Node node = Jenkins.get().getNode(nodeName);
+                                        if (node != null) {
+                                            if (filterByAgent && agentFilter.equals(node.getNodeName())) {
+                                                include = true;
+                                            }
+                                            nodeExecution.builtOn = node.getNodeName();
+                                            nodeExecution.builtOnStr = node.getDisplayName();
+                                        } else {
+                                            if (filterByAgent && agentFilter.equals(nodeName)) {
+                                                include = true;
+                                            }
+                                            nodeExecution.builtOnStr = nodeName;
+                                        }
+                                    }
+                                    BlockEndNode endNode = startNode.getEndNode();
+                                    nodeExecution.duration = getDurationString(startNode, endNode);
+                                    ArgumentsActionImpl args = parentNode.getAction(ArgumentsActionImpl.class);
+                                    if (args != null) {
+                                        String label = (String) args.getArgumentValue("label");
+                                        if (label != null) {
+                                            nodeExecution.label = label;
+                                        }
+                                    }
+                                    result.addNodeExecution(nodeExecution);
                                 }
-                                nodeExecution.builtOn = node.getNodeName();
-                                nodeExecution.builtOnStr = node.getDisplayName();
-                            } else {
-                                if (filterByAgent && agentFilter.equals(nodeName)) {
-                                    include = true;
-                                }
-                                nodeExecution.builtOnStr = nodeName;
                             }
                         }
-                        BlockEndNode endNode = startNode.getEndNode();
-                        nodeExecution.duration = getDurationString(startNode, endNode);
-                        ArgumentsActionImpl args = flowNode.getAction(ArgumentsActionImpl.class);
-                        if (args != null) {
-                            String label = (String) args.getArgumentValue("label");
-                            if (label != null) {
-                                nodeExecution.label = label;
-                            }
-                        }
-                        result.addNodeExecution(nodeExecution);
                     }
                 }
             }
