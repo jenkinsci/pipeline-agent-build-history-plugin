@@ -41,9 +41,8 @@ public class AgentBuildHistoryListeners {
 
     @Override
     public void onDeleted(Item item) {
-      if (item instanceof Job) {
-        Job<?, ?> job = (Job<?, ?>) item;
-        String jobName = job.getFullName();
+      if (item instanceof Job<?, ?>) {
+        String jobName = item.getFullName();
         BuildHistoryFileManager.deleteJobSerialization(jobName, AgentBuildHistoryConfig.get().getStorageDir());
       }
     }
@@ -84,18 +83,15 @@ public class AgentBuildHistoryListeners {
     public void taskStarted(Executor executor, Queue.Task task) {
       Queue.Executable executable = executor.getCurrentExecutable();
       Computer c = executor.getOwner();
-      if (executable instanceof AbstractBuild) {
-        Run<?, ?> run = (Run<?, ?>) executable;
+      if (executable instanceof Run<?, ?> run) {
         LOGGER.log(Level.FINER, () -> "Starting Job: " + run.getFullDisplayName() + " on " + c.getName());
         AgentBuildHistory.startJobExecution(c, run);
-      } else if (task instanceof ExecutorStepExecution.PlaceholderTask) {
-        ExecutorStepExecution.PlaceholderTask pht = (ExecutorStepExecution.PlaceholderTask) task;
+      } else if (task instanceof ExecutorStepExecution.PlaceholderTask pht) {
         executable = task.getOwnerExecutable();
         try {
           FlowNode node = pht.getNode();
-          if (node != null && executable instanceof WorkflowRun) {
-            Run<?, ?> run = (Run<?, ?>) executable;
-            AgentBuildHistory.startFlowNodeExecution(c, (WorkflowRun) run, node);
+          if (node != null && executable instanceof WorkflowRun run) {
+            AgentBuildHistory.startFlowNodeExecution(c, run, node);
             LOGGER.log(Level.FINER, () -> "Starting part of pipeline: " + run.getFullDisplayName()
                 + " Node id: " + node.getId() + " on " + c.getName());
           }
