@@ -10,53 +10,53 @@ import org.kohsuke.stapler.verb.POST;
 
 public class WorkflowJobHistoryAction implements Action {
 
-    private final WorkflowJob job;
+  private final WorkflowJob job;
 
-    public WorkflowJobHistoryAction(WorkflowJob job) {
-        this.job = job;
-    }
+  public WorkflowJobHistoryAction(WorkflowJob job) {
+    this.job = job;
+  }
 
-    public WorkflowJob getJob() {
-        return job;
-    }
+  public WorkflowJob getJob() {
+    return job;
+  }
 
-    @Override
-    public String getIconFileName() {
-        return "symbol-file-tray-stacked-outline plugin-ionicons-api";
-    }
+  @Override
+  public String getIconFileName() {
+    return "symbol-file-tray-stacked-outline plugin-ionicons-api";
+  }
 
-    @Override
-    public String getDisplayName() {
-        return "Extended Build History";
-    }
+  @Override
+  public String getDisplayName() {
+    return "Extended Build History";
+  }
 
-    @Override
-    public String getUrlName() {
-        return "extendedBuildHistory";
-    }
+  @Override
+  public String getUrlName() {
+    return "extendedBuildHistory";
+  }
 
-    public WorkflowJobTrend getHandler(String statusFilter, String agentFilter, String startBuild) {
-        return new WorkflowJobTrend(job, statusFilter, agentFilter, startBuild);
-    }
+  public WorkflowJobTrend getHandler(String statusFilter, String agentFilter, String startBuild) {
+    return new WorkflowJobTrend(job, statusFilter, agentFilter, startBuild);
+  }
 
-    @POST
-    public void doReplay(@QueryParameter int number) {
-        WorkflowRun run = job.getBuildByNumber(number);
-        if (!hasReplayPermission(run)) {
-            return;
-        }
-        ReplayAction replayAction = run.getAction(ReplayAction.class);
-        if (!isReplayable(replayAction)) {
-            return;
-        }
-        replayAction.run2(replayAction.getOriginalScript(), replayAction.getOriginalLoadedScripts());
+  @POST
+  public void doReplay(@QueryParameter int number) {
+    WorkflowRun run = job.getBuildByNumber(number);
+    if (!hasReplayPermission(run)) {
+      return;
     }
+    ReplayAction replayAction = run.getAction(ReplayAction.class);
+    if (!isReplayable(replayAction)) {
+      return;
+    }
+    replayAction.run2(replayAction.getOriginalScript(), replayAction.getOriginalLoadedScripts());
+  }
 
-    public boolean isReplayable(ReplayAction replayAction) {
-        return replayAction != null && replayAction.isRebuildEnabled();
-    }
+  public boolean isReplayable(ReplayAction replayAction) {
+    return replayAction != null && replayAction.isRebuildEnabled();
+  }
 
-    public boolean hasReplayPermission(WorkflowRun run) {
-        return job.hasPermission(Item.BUILD) || run.hasPermission(ReplayAction.REPLAY);
-    }
+  public boolean hasReplayPermission(WorkflowRun run) {
+    return job.hasPermission(Item.BUILD) || run.hasPermission(ReplayAction.REPLAY);
+  }
 }

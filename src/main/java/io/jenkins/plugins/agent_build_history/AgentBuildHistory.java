@@ -62,6 +62,7 @@ public class AgentBuildHistory implements Action {
   public Computer getComputer() {
     return computer;
   }
+
   /*
    * used by jelly
    */
@@ -97,9 +98,9 @@ public class AgentBuildHistory implements Action {
 
     LOGGER.finer("Getting runs for node: " + computer.getName() + " page: " + page + " pageSize: " + pageSize + " sortColumn: " + sortColumn + " sortOrder: " + sortOrder);
 
-    int start = (page-1)*pageSize;
+    int start = (page - 1) * pageSize;
     runListTable.setRuns(getExecutionsForNode(computer.getName(), start, pageSize, sortColumn, sortOrder));
-    return  runListTable;
+    return runListTable;
   }
 
   public List<AgentExecution> getExecutionsForNode(String nodeName, int start, int limit, String sortColumn, String sortOrder) {
@@ -112,7 +113,7 @@ public class AgentBuildHistory implements Action {
     // Sort index lines based on start time or build
     indexLines.sort((a, b) -> {
       int comparison = 0;
-      switch(sortColumn){
+      switch (sortColumn) {
         case "startTime":
           long timeA = Long.parseLong(a.split(BuildHistoryFileManager.separator)[2]);
           long timeB = Long.parseLong(b.split(BuildHistoryFileManager.separator)[2]);
@@ -151,59 +152,59 @@ public class AgentBuildHistory implements Action {
     return result;
   }
 
-    public static AgentExecution loadSingleExecution(String jobName, int buildNumber) {
-      Job<?, ?> job = Jenkins.get().getItemByFullName(jobName, Job.class);
-      Run<?, ?> run = null;
-      if (job != null) {
-        run = job.getBuildByNumber(buildNumber);
-      }
-      if (run == null) {
-          LOGGER.info("Run not found for " + jobName + " #" + buildNumber);
-          return null;
-      }
-      LOGGER.finer("Loading run " + run.getFullDisplayName());
-      AgentExecution execution = new AgentExecution(run);
+  public static AgentExecution loadSingleExecution(String jobName, int buildNumber) {
+    Job<?, ?> job = Jenkins.get().getItemByFullName(jobName, Job.class);
+    Run<?, ?> run = null;
+    if (job != null) {
+      run = job.getBuildByNumber(buildNumber);
+    }
+    if (run == null) {
+      LOGGER.info("Run not found for " + jobName + " #" + buildNumber);
+      return null;
+    }
+    LOGGER.finer("Loading run " + run.getFullDisplayName());
+    AgentExecution execution = new AgentExecution(run);
 
-      if (run instanceof AbstractBuild) {
-        Node node = ((AbstractBuild<?, ?>) run).getBuiltOn();
-        if (node != null) {
-          LOGGER.finer("Loading AbstractBuild on node: " + node.getNodeName());
-          return execution;
-        }
-      } else if (run instanceof WorkflowRun wfr) {
-          LOGGER.finer("Loading WorkflowRun: " + wfr.getFullDisplayName());
-        FlowExecution flowExecution = wfr.getExecution();
-        if (flowExecution != null) {
-          for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
-            if (! (flowNode instanceof StepStartNode startNode)) {
-              continue;
-            }
-            StepDescriptor descriptor = startNode.getDescriptor();
-            if (descriptor instanceof ExecutorStep.DescriptorImpl) {
-              if (!flowNode.getActions(BodyInvocationAction.class).isEmpty()) {
-                for (FlowNode parent: flowNode.getParents()) {
-                  if (! (parent instanceof StepStartNode parentNode)) {
-                    continue;
-                  }
-
-                  StepDescriptor parentDescriptor = parentNode.getDescriptor();
-                  if (parentDescriptor instanceof ExecutorStep.DescriptorImpl) {
-                    WorkspaceActionImpl action = parentNode.getAction(WorkspaceActionImpl.class);
-                    if (action != null) {
-                      String nodeName = action.getNode();
-                      execution.addFlowNode(flowNode, nodeName);
-                      LOGGER.finer("Loading WorkflowRun FlowNode on node: " + nodeName);
-                    }
-                  }
-                  break;
+    if (run instanceof AbstractBuild) {
+      Node node = ((AbstractBuild<?, ?>) run).getBuiltOn();
+      if (node != null) {
+        LOGGER.finer("Loading AbstractBuild on node: " + node.getNodeName());
+        return execution;
+      }
+    } else if (run instanceof WorkflowRun wfr) {
+      LOGGER.finer("Loading WorkflowRun: " + wfr.getFullDisplayName());
+      FlowExecution flowExecution = wfr.getExecution();
+      if (flowExecution != null) {
+        for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
+          if (!(flowNode instanceof StepStartNode startNode)) {
+            continue;
+          }
+          StepDescriptor descriptor = startNode.getDescriptor();
+          if (descriptor instanceof ExecutorStep.DescriptorImpl) {
+            if (!flowNode.getActions(BodyInvocationAction.class).isEmpty()) {
+              for (FlowNode parent : flowNode.getParents()) {
+                if (!(parent instanceof StepStartNode parentNode)) {
+                  continue;
                 }
+
+                StepDescriptor parentDescriptor = parentNode.getDescriptor();
+                if (parentDescriptor instanceof ExecutorStep.DescriptorImpl) {
+                  WorkspaceActionImpl action = parentNode.getAction(WorkspaceActionImpl.class);
+                  if (action != null) {
+                    String nodeName = action.getNode();
+                    execution.addFlowNode(flowNode, nodeName);
+                    LOGGER.finer("Loading WorkflowRun FlowNode on node: " + nodeName);
+                  }
+                }
+                break;
               }
             }
           }
         }
       }
-      return execution;
     }
+    return execution;
+  }
 
   private static void load() {
     LOGGER.log(Level.INFO, () -> "Starting to synchronize all runs");
@@ -221,7 +222,7 @@ public class AgentBuildHistory implements Action {
         FlowExecution flowExecution = wfr.getExecution();
         if (flowExecution != null) {
           for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {
-            if (! (flowNode instanceof StepStartNode startNode)) {
+            if (!(flowNode instanceof StepStartNode startNode)) {
               continue;
             }
             for (WorkspaceActionImpl action : flowNode.getActions(WorkspaceActionImpl.class)) {
