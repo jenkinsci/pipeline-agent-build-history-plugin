@@ -165,8 +165,8 @@ public class AgentBuildHistory implements Action {
     LOGGER.finer("Loading run " + run.getFullDisplayName());
     AgentExecution execution = new AgentExecution(run);
 
-    if (run instanceof AbstractBuild) {
-      Node node = ((AbstractBuild<?, ?>) run).getBuiltOn();
+    if (run instanceof AbstractBuild<?, ?> build) {
+      Node node = build.getBuiltOn();
       if (node != null) {
         LOGGER.finer("Loading AbstractBuild on node: " + node.getNodeName());
         return execution;
@@ -212,13 +212,12 @@ public class AgentBuildHistory implements Action {
     runList.forEach(run -> {
       LOGGER.finer("Loading run " + run.getFullDisplayName());
 
-      if (run instanceof AbstractBuild) {
-        Node node = ((AbstractBuild<?, ?>) run).getBuiltOn();
+      if (run instanceof AbstractBuild<?, ?> build) {
+        Node node = build.getBuiltOn();
         if (node != null) {
           BuildHistoryFileManager.addRunToNodeIndex(node.getNodeName(), run, AgentBuildHistoryConfig.get().getStorageDir());
         }
-      } else if (run instanceof WorkflowRun) {
-        WorkflowRun wfr = (WorkflowRun) run;
+      } else if (run instanceof WorkflowRun wfr) {
         FlowExecution flowExecution = wfr.getExecution();
         if (flowExecution != null) {
           for (FlowNode flowNode : new DepthFirstScanner().allNodes(flowExecution)) {

@@ -115,8 +115,8 @@ public class AgentExecution implements Comparable<AgentExecution> {
       if (execution != null) {
         try {
           FlowNode node = execution.getNode(nodeId);
-          if (node instanceof BlockStartNode) {
-            return ((BlockStartNode) node).getEndNode();
+          if (node instanceof BlockStartNode bsn) {
+            return bsn.getEndNode();
           }
         } catch (IOException e) {
           return null;
@@ -180,18 +180,17 @@ public class AgentExecution implements Comparable<AgentExecution> {
       }
       if (status == null) {
         Run<?, ?> run = AgentExecution.this.getRun();
-        if (!(run instanceof WorkflowRun)) {
+        if (!(run instanceof WorkflowRun wfr)) {
           return Status.UNKNOWN;
         }
-        WorkflowRun wfr = (WorkflowRun) run;
         FlowExecution flowExecution = wfr.getExecution();
         if (flowExecution == null) {
           return Status.UNKNOWN;
         }
         try {
           FlowNode node = flowExecution.getNode(nodeId);
-          if (node instanceof BlockStartNode) {
-            BlockEndNode<?> endNode = ((BlockStartNode) node).getEndNode();
+          if (node instanceof BlockStartNode bsn) {
+            BlockEndNode<?> endNode = bsn.getEndNode();
             if (endNode != null) {
               ErrorAction errorAction = endNode.getError();
               status = errorAction != null ? Status.FAILURE : Status.SUCCESS;
