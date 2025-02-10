@@ -66,7 +66,7 @@ public class RunListTable extends ProgressiveRendering {
 
     JSONArray flowNodes = new JSONArray();
     if (run instanceof WorkflowRun) {
-      for (AgentExecution.FlowNodeExecution nodeExec: execution.getFlowNodes()) {
+      for (AgentExecution.FlowNodeExecution nodeExec : execution.getFlowNodes()) {
         if (nodeExec.getNodeName().equals(computerName)) {
           flowNodes.add(calculateFlowNode(nodeExec));
         }
@@ -97,7 +97,7 @@ public class RunListTable extends ProgressiveRendering {
   protected void compute() throws Exception {
     double decay = 1;
     Functions functions = new Functions();
-    for (AgentExecution execution: runs) {
+    for (AgentExecution execution : runs) {
       if (canceled()) {
         return;
       }

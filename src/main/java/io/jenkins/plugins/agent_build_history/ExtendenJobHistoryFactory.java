@@ -10,14 +10,14 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 
 @Extension
 public class ExtendenJobHistoryFactory extends TransientActionFactory<WorkflowJob> {
-    @Override
-    public Class<WorkflowJob> type() {
-        return WorkflowJob.class;
-    }
+  @Override
+  public Class<WorkflowJob> type() {
+    return WorkflowJob.class;
+  }
 
-    @NonNull
-    @Override
-    public Collection<? extends Action> createFor(@NonNull WorkflowJob target) {
-        return Collections.singletonList(new WorkflowJobHistoryAction(target));
-    }
+  @NonNull
+  @Override
+  public Collection<? extends Action> createFor(@NonNull WorkflowJob target) {
+    return Collections.singletonList(new WorkflowJobHistoryAction(target));
+  }
 }
