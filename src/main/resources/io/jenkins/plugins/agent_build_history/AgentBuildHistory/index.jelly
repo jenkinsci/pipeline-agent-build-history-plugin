@@ -32,7 +32,8 @@
       <div class="help-area tr" style="max-width: 750px;"><div class="help"><p class="jenkins-spinner">Loading...</p></div></div>
 
       <t:setIconSize/>
-      <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
+      <st:adjunct includes="io.jenkins.plugins.agent_build_history.buildHistory" />
+      <st:adjunct includes="io.jenkins.plugins.agent_build_history.AgentBuildHistory.history" />
       <l:progressiveRendering handler="${it.handler}" callback="abhDisplayExtendedBuildHistory"/>
       <!-- Pagination Controls -->
       <j:set var="page" value="${request.getParameter('page') != null ? request.getParameter('page') : 1}"/>
@@ -40,33 +41,60 @@
       <j:set var="totalPages" value="${it.totalPages}"/>
       <j:set var="sortColumn" value="${request.getParameter('sortColumn') != null ? request.getParameter('sortColumn') : h.getCookie(request, 'sortColumn', 'startTime')}"/>
       <j:set var="sortOrder" value="${request.getParameter('sortOrder') != null ? request.getParameter('sortOrder') : h.getCookie(request, 'sortOrder', 'desc')}"/>
-      <div class="abh-pagination-container">
+      <j:set var="statusFilter" value="${request.getParameter('status')}" defaultValue="all"/>
+
+      <div>
         <!-- Pagination Previous/Next Buttons -->
-        <nav aria-label="Page navigation" class="abh-pagination">
-          <!-- Previous button -->
-          <j:if test="${page &gt; 1}">
-            <a class="jenkins-button" tooltip="${%Previous}" href="${request.requestURI}?page=${page - 1}&amp;pageSize=${pageSize}&amp;sortColumn=${sortColumn}&amp;sortOrder=${sortOrder}" aria-label="Previous">
-              <l:icon src="symbol-arrow-back-outline plugin-ionicons-api"/>
-            </a>
-          </j:if>
+        <div id="abh-pagination-filter-container" class="jenkins-form-item tr help-sibling" data-sort-column="${sortColumn}" data-sort-order="${sortOrder}" data-page-size="${pageSize}">
+          <div class="abh-pagination-container">
+            <nav aria-label="Page navigation" class="abh-pagination">
+              <!-- Previous button -->
+              <j:if test="${page &gt; 1}">
+                <a class="jenkins-button" tooltip="${%Previous}" href="./?page=${page - 1}&amp;pageSize=${pageSize}&amp;sortColumn=${sortColumn}&amp;sortOrder=${sortOrder}&amp;status=${statusFilter}" aria-label="Previous">
+                  <l:icon src="symbol-arrow-back-outline plugin-ionicons-api"/>
+                </a>
+              </j:if>
 
-          <!-- Page Input Field -->
-          <span class="abh-page-label">Page</span>
-          <input type="number" id="pageInput" class="jenkins-input abh-page-input" min="1" max="${totalPages}" value="${page}" data-sort-column="${sortColumn}" data-sort-order="${sortOrder}" data-page-size="${pageSize}"/>
-          <span class="abh-page-label">of ${totalPages}</span>
+              <!-- Page Input Field -->
+              <span class="abh-page-label">Page</span>
+              <input type="number" id="pageInput" class="jenkins-input abh-page-input" min="1" max="${totalPages}" value="${page}" />
+              <span class="abh-page-label">of ${totalPages}</span>
 
-          <!-- Next button -->
-          <j:if test="${page &lt; totalPages}">
-            <a class="jenkins-button" tooltip="${%Next}" href="${request.requestURI}?page=${page + 1}&amp;pageSize=${pageSize}&amp;sortColumn=${sortColumn}&amp;sortOrder=${sortOrder}" aria-label="Next">
-              <l:icon src="symbol-arrow-forward-outline plugin-ionicons-api"/>
-            </a>
-          </j:if>
-        </nav>
+              <!-- Next button -->
+              <j:if test="${page &lt; totalPages}">
+                <a class="jenkins-button" tooltip="${%Next}" href="./?page=${page + 1}&amp;pageSize=${pageSize}&amp;sortColumn=${sortColumn}&amp;sortOrder=${sortOrder}&amp;status=${statusFilter}" aria-label="Next">
+                  <l:icon src="symbol-arrow-forward-outline plugin-ionicons-api"/>
+                </a>
+              </j:if>
+            </nav>
 
-        <!-- Page Size Input -->
-        <div class="abh-page-size-selector">
-          <label class="abh-page-label" for="pageSizeInput">Items per page:</label>
-          <input type="number" id="pageSizeInput" class="jenkins-input abh-page-input" min="1" value="${pageSize}" data-sort-column="${sortColumn}" data-sort-order="${sortOrder}"/>
+            <!-- Page Size Input -->
+            <div class="abh-page-size-selector">
+              <label class="abh-page-label" for="pageSizeInput">Items per page:</label>
+              <input type="number" id="pageSizeInput" class="jenkins-input abh-page-input" min="1" value="${pageSize}" />
+            </div>
+          </div>
+          <div class="abh-pagination-container">
+            <div class="abh-trend--filter">
+              <div>
+                <div class="jenkins-form-label">Filter by Status<a tooltip="Help for feature: Filter by Status" helpurl="${rootURL}/plugin/pipeline-agent-build-history/help/statusFilter.html" href="#" class="jenkins-help-button" tabindex="9999" title="Help for feature: Filter by Status"><span>?</span></a></div>
+                <div class="setting-main">
+                  <div class="jenkins-select abh-status-filter" style="width: 100px;">
+                    <select id="abh-status-filter" name="status" class="jenkins-select__input">
+                      <option value="all" selected="${statusFilter == 'all' ? '': null}">All</option>
+                      <option value="success" selected="${statusFilter == 'success' ? '': null}">Success</option>
+                      <option value="unstable" selected="${statusFilter == 'unstable' ? '': null}">Unstable</option>
+                      <option value="failure" selected="${statusFilter == 'failure' ? '': null}">Failed</option>
+                      <option value="aborted" selected="${statusFilter == 'aborted' ? '': null}">Aborted</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="help-area tr">
+          <div class="help"></div>
         </div>
       </div>
 
@@ -83,10 +111,10 @@
                 <j:if test="${sortColumn == 'build'}">
                   <j:choose>
                     <j:when test="${sortOrder == 'asc'}">
-                      <span class="sortarrow" style="font-size: large;">  ↑</span> <!-- Up arrow for ascending order -->
+                      <l:icon src="symbol-arrow-up-outline plugin-ionicons-api" class="jenkins-!-margin-left-1"/>
                     </j:when>
                     <j:otherwise>
-                      <span class="sortarrow" style="font-size: large;">  ↓</span> <!-- Down arrow for descending order -->
+                      <l:icon src="symbol-arrow-down-outline plugin-ionicons-api" class="jenkins-!-margin-left-1"/>
                     </j:otherwise>
                   </j:choose>
                 </j:if>
@@ -100,10 +128,10 @@
                 <j:if test="${sortColumn == 'startTime'}">
                   <j:choose>
                     <j:when test="${sortOrder == 'asc'}">
-                      <span class="sortarrow" style="font-size: large;">  ↑</span> <!-- Up arrow for ascending order -->
+                      <l:icon src="symbol-arrow-up-outline plugin-ionicons-api" class="jenkins-!-margin-left-1"/>
                     </j:when>
                     <j:otherwise>
-                      <span class="sortarrow" style="font-size: large;">  ↓</span> <!-- Down arrow for descending order -->
+                      <l:icon src="symbol-arrow-down-outline plugin-ionicons-api" class="jenkins-!-margin-left-1"/>
                     </j:otherwise>
                   </j:choose>
                 </j:if>

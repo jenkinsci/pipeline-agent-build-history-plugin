@@ -34,6 +34,14 @@ public class AgentBuildHistoryListeners {
         BuildHistoryFileManager.deleteExecution(nodeName, jobName, buildNumber, AgentBuildHistoryConfig.get().getStorageDir());
       }
     }
+
+    @Override
+    public void onFinalized(Run<?, ?> run) {
+      Set<String> nodeNames = BuildHistoryFileManager.getAllSavedNodeNames(AgentBuildHistoryConfig.get().getStorageDir());
+      for (String nodeName : nodeNames) {
+        BuildHistoryFileManager.updateResult(nodeName, run, AgentBuildHistoryConfig.get().getStorageDir());
+      }
+    }
   }
 
   @Extension

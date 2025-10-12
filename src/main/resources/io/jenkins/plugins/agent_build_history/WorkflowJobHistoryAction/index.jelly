@@ -4,22 +4,6 @@
     <st:include page="sidepanel.jelly" it="${it.job}"/>
     <st:adjunct includes="hudson.model.Job.buildTimeTrend_resources" />
     <l:main-panel>
-      <template id="jenkins-build-status-icons">
-        <l:icon src="symbol-status-blue" id="blue" />
-        <l:icon src="symbol-status-blue-anime" id="blue-anime" />
-        <l:icon src="symbol-status-yellow" id="yellow" />
-        <l:icon src="symbol-status-yellow-anime" id="yellow-anime" />
-        <l:icon src="symbol-status-red" id="red" />
-        <l:icon src="symbol-status-red-anime" id="red-anime" />
-        <l:icon src="symbol-status-nobuilt" id="nobuilt" />
-        <l:icon src="symbol-status-nobuilt-anime" id="nobuilt-anime" />
-        <l:icon src="symbol-status-aborted" id="aborted" />
-        <l:icon src="symbol-status-aborted-anime" id="aborted-anime" />
-        <l:icon src="symbol-status-disabled" id="disabled" />
-        <l:icon src="symbol-status-disabled-anime" id="disabled-anime" />
-        <l:icon src="symbol-terminal" id="console" alt="${%Console output}"/>
-        <l:icon src="symbol-chevron-down" id="chevron-down" alt="${%Show all Agents}"/>
-      </template>
       <h1>${%Extended Build History}</h1>
       <j:set var="startBuild" value="${request.getParameter('startBuild')}" defaultValue="-1"/>
       <j:set var="statusFilter" value="${request.getParameter('status')}" defaultValue="all"/>
@@ -30,39 +14,45 @@
       <j:set var="oldestBuild" value="${handler.oldestBuild}" defaultValue="-1"/>
       <j:set var="newestBuild" value="${handler.newestBuild}" defaultValue="-1"/>
       <j:set var="startBuild" value="${handler.startBuild}" defaultValue="-1"/>
-      <f:form action="." method="POST" name="filter">
-        <div class="jenkins-form-item tr help-sibling">
-        <div class="abh-trend--filter">
-          <div>
-            <div class="jenkins-form-label">Filter by Status<a tooltip="Help for feature: Filter by Status" helpurl="/jenkins/plugin/pipeline-agent-build-history/help/statusFilter.html" href="#" class="jenkins-help-button" tabindex="9999" title="Help for feature: Filter by Status"><span>?</span></a></div>
-            <div class="setting-main">
-              <div class="jenkins-select" style="width: 130px;">
-              <select name="status" class="jenkins-select__input">
-                <option value="all" selected="${statusFilter == 'all' ? '': null}">All</option>
-                <option value="success" selected="${statusFilter == 'success' ? '': null}">Success</option>
-                <option value="unstable" selected="${statusFilter == 'unstable' ? '': null}">Unstable</option>
-                <option value="failure" selected="${statusFilter == 'failure' ? '': null}">Failed</option>
-                <option value="aborted" selected="${statusFilter == 'aborted' ? '': null}">Aborted</option>
-              </select>
+      <j:set var="hasMoreRuns" value="${handler.hasMoreRuns}" defaultValue="true"/>
+
+      <div>
+        <div class="jenkins-form-item tr help-sibling" style="margin-bottom: 8px">
+          <div class="abh-trend--filter">
+            <div>
+              <div class="jenkins-form-label">Filter by Status<a tooltip="Help for feature: Filter by Status" helpurl="${rootURL}/plugin/pipeline-agent-build-history/help/statusFilter.html" href="#" class="jenkins-help-button" tabindex="9999" title="Help for feature: Filter by Status"><span>?</span></a></div>
+              <div class="setting-main">
+                <div class="jenkins-select" style="width: 100px;">
+                  <select id="abh-status-filter" name="status" class="jenkins-select__input">
+                    <option value="all" selected="${statusFilter == 'all' ? '': null}">All</option>
+                    <option value="success" selected="${statusFilter == 'success' ? '': null}">Success</option>
+                    <option value="unstable" selected="${statusFilter == 'unstable' ? '': null}">Unstable</option>
+                    <option value="failure" selected="${statusFilter == 'failure' ? '': null}">Failed</option>
+                    <option value="aborted" selected="${statusFilter == 'aborted' ? '': null}">Aborted</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="jenkins-form-label">Filter by Agent<a tooltip="Help for feature: Filter by Agent" helpurl="${rootURL}/plugin/pipeline-agent-build-history/help/agentFilter.html" href="#" class="jenkins-help-button" tabindex="9999" title="Help for feature: Filter by Agent"><span>?</span></a></div>
+              <div class="setting-main">
+                <input id="abh-agent-filter" name="agent" type="search" value="${agentFilter}" class="jenkins-input" style="min-width: 300px"/>
+              </div>
+            </div>
+            <div>
+              <div class="jenkins-form-label">Start Build</div>
+              <div class="setting-main">
+                <input id="abh-start-filter" name="startBuild" type="number" min="${oldestBuild}" class="jenkins-input" style="width: 110px"/>
               </div>
             </div>
           </div>
-          <div>
-            <div class="jenkins-form-label">Filter by Agent<a tooltip="Help for feature: Filter by Agent" helpurl="/jenkins/plugin/pipeline-agent-build-history/help/agentFilter.html" href="#" class="jenkins-help-button" tabindex="9999" title="Help for feature: Filter by Agent"><span>?</span></a></div>
-            <div class="setting-main"><input name="agent" type="search" value="${agentFilter}" class="jenkins-input" style="min-width: 300px"/></div>
+          <div class="help-area tr">
+            <div class="help"></div>
           </div>
-          <div>
-            <div class="jenkins-form-label">Start Build</div>
-            <div class="setting-main"><input name="startBuild" type="number" min="${oldestBuild}" class="jenkins-input" style="width: 110px"/></div>
-          </div>
-          <f:submit value="Filter"/>
         </div>
-        <div class="help-area tr">
-          <div class="help"></div>
-        </div>
-        </div>
-      </f:form>
-      <st:adjunct includes="io.jenkins.plugins.agent_build_history.agentBuildHistory" />
+      </div>
+      <st:adjunct includes="io.jenkins.plugins.agent_build_history.buildHistory" />
+      <st:adjunct includes="io.jenkins.plugins.agent_build_history.WorkflowJobHistoryAction.history" />
       <div class="abh-trend">
         <table class="jenkins-table jenkins-table--small sortable abh-trend--table" id="trend"
                data-show-text="${%Show all agents}" data-hide-text="${%Hide all agents}">
@@ -188,36 +178,23 @@
         </table>
         <div class="abh-trend--scroll-buttons">
           <j:if test="${startBuild lt newestBuild}">
-            <f:form action="." method="POST" name="filter">
-              <input type="hidden" name="status" value="${statusFilter}"/>
-              <input type="hidden" name="agent" value="${agentFilter}"/>
-              <input type="hidden" name="startBuild" value="-1"/>
-              <button type="submit" tooltip="Newest Builds" class="jenkins-button abh-trend--scroll-button"><l:icon src="symbol-arrow-start plugin-pipeline-agent-build-history" /></button>
-            </f:form>
-            <f:form action="." method="POST" name="filter">
-              <input type="hidden" name="status" value="${statusFilter}"/>
-              <input type="hidden" name="agent" value="${agentFilter}"/>
-              <input type="hidden" name="startBuild" value="${startNewer}"/>
-              <button type="submit" tooltip="Newer Builds" class="jenkins-button abh-trend--scroll-button"><l:icon src="symbol-arrow-up-outline plugin-ionicons-api" /></button>
-            </f:form>
+            <a tooltip="Newest Builds" href="./?status=${statusFilter}&amp;agent=${agentFilter}&amp;startBuild=-1" class="jenkins-button abh-trend--scroll-button">
+              <l:icon src="symbol-arrow-start plugin-pipeline-agent-build-history" />
+            </a>
+            <a tooltip="Newer Builds" href="./?status=${statusFilter}&amp;agent=${agentFilter}&amp;startBuild=${startNewer}" class="jenkins-button abh-trend--scroll-button">
+              <l:icon src="symbol-arrow-up-outline plugin-ionicons-api" />
+            </a>
+            <j:if test="${hasMoreRuns}">
+              <div style="margin-top: 5px"/>
+            </j:if>
           </j:if>
-          <j:if test="${startOlder gt 0}">
-            <div style="margin-top: 1.75rem">
-            <f:form action="." method="POST" name="filter">
-              <input type="hidden" name="status" value="${statusFilter}"/>
-              <input type="hidden" name="agent" value="${agentFilter}"/>
-              <input type="hidden" name="startBuild" value="${startOlder}"/>
-              <button type="submit" tooltip="Older Builds" class="jenkins-button abh-trend--scroll-button"><l:icon src="symbol-arrow-down-outline plugin-ionicons-api" /></button>
-            </f:form>
-            </div>
-            <div style="margin-bottom: 1.75rem">
-            <f:form action="." method="POST" name="filter">
-              <input type="hidden" name="status" value="${statusFilter}"/>
-              <input type="hidden" name="agent" value="${agentFilter}"/>
-              <input type="hidden" name="startBuild" value="${oldestBuild}"/>
-              <button type="submit" tooltip="Oldest Builds" class="jenkins-button abh-trend--scroll-button"><l:icon src="symbol-arrow-end plugin-pipeline-agent-build-history" /></button>
-            </f:form>
-            </div>
+          <j:if test="${hasMoreRuns}">
+            <a tooltip="Older Builds" href="./?status=${statusFilter}&amp;agent=${agentFilter}&amp;startBuild=${startOlder}" class="jenkins-button abh-trend--scroll-button">
+              <l:icon src="symbol-arrow-down-outline plugin-ionicons-api" />
+            </a>
+            <a tooltip="Oldest Builds" href="./?status=${statusFilter}&amp;agent=${agentFilter}&amp;startBuild=${oldestBuild}" class="jenkins-button abh-trend--scroll-button">
+              <l:icon src="symbol-arrow-end plugin-pipeline-agent-build-history" />
+            </a>
           </j:if>
 
         </div>

@@ -1,5 +1,6 @@
 package io.jenkins.plugins.agent_build_history;
 
+import hudson.model.Result;
 import hudson.model.Run;
 
 import java.io.BufferedReader;
@@ -58,6 +59,36 @@ public class BuildHistoryFileManager {
     }
   }
 
+  public static void updateResult(String nodeName, Run<?, ?> run, String storageDir) {
+    Object lock = getNodeLock(nodeName);
+    synchronized (lock) {
+      List<String> indexLines = readIndexFile(nodeName, storageDir);
+      File indexFile = new File(storageDir + "/" + nodeName + "_index.txt");
+      try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(indexFile), StandardCharsets.UTF_8))) {
+        boolean found = false;
+        for (String line : indexLines) {
+          if (line.startsWith(run.getParent().getFullName() + separator + run.getNumber() + separator)) {
+            if (!line.endsWith(separator + run.getResult())) {
+              writeLine(writer, run);
+              found = true;
+            } else {
+              writer.write(line);
+            }
+            break;
+          } else {
+            writer.write(line);
+          }
+          writer.newLine();
+        }
+        if (!found) {
+          writeLine(writer, run);
+          writer.newLine();
+        }
+      } catch (IOException e) {
+        LOGGER.log(Level.WARNING, "Failed to update result in index-file for node " + nodeName, e);
+      }
+    }}
+
   // Appends a new run entry and updates the index
   public static void addRunToNodeIndex(String nodeName, Run<?, ?> run, String storageDir) {
     Object lock = getNodeLock(nodeName);
@@ -65,14 +96,25 @@ public class BuildHistoryFileManager {
       // Update index for the node
       File indexFile = new File(storageDir + "/" + nodeName + "_index" + ".txt");
       List<String> lines = readIndexFile(nodeName, storageDir);
-      boolean exists = lines.contains(run.getParent().getFullName() + separator + run.getNumber() + separator + run.getStartTimeInMillis());
+      String lineMatch = run.getParent().getFullName() + separator + run.getNumber() + separator;
+      boolean exists = lines.stream().anyMatch(line -> line.startsWith(lineMatch));
       if (!exists) {
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(indexFile, true), StandardCharsets.UTF_8))) {
-          writer.write(run.getParent().getFullName() + separator + run.getNumber() + separator + run.getStartTimeInMillis());
+          writeLine(writer, run);
           writer.newLine();
         } catch (IOException e) {
           LOGGER.log(Level.WARNING, "Failed to update index for node " + nodeName, e);
         }
+      }
+    }
+  }
+
+  private static void writeLine(BufferedWriter writer, Run<?, ?> run) throws IOException {
+    writer.write(run.getParent().getFullName() + separator + run.getNumber() + separator + run.getStartTimeInMillis());
+    if (!run.isLogUpdated()) {
+      Result result = run.getResult();
+      if (result != null) {
+        writer.write(separator + result.toString());
       }
     }
   }
