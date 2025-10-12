@@ -70,11 +70,10 @@ public class BuildHistoryFileManager {
           if (line.startsWith(run.getParent().getFullName() + separator + run.getNumber() + separator)) {
             if (!line.endsWith(separator + run.getResult())) {
               writeLine(writer, run);
-              found = true;
             } else {
               writer.write(line);
             }
-            break;
+            found = true;
           } else {
             writer.write(line);
           }
