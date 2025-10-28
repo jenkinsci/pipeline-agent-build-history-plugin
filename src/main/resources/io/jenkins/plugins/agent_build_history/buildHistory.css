@@ -91,13 +91,18 @@
   padding: 0 15px;
 }
 
-.abh-pagination-container {
+.abh-pagination-container,
+#abh-pagination-filter-container {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: end;
   justify-content: flex-start;
-  margin-bottom: 5px;
   gap: 20px;
+}
+
+.abh-pagination-filter-container {
+  align-items: end;
+  margin-bottom: 8px;
 }
 
 .abh-pagination {
@@ -113,9 +118,13 @@
 }
 
 .abh-page-input {
-  max-width: 80px;
+  width: 90px;
 }
 
 .abh-page-label {
   min-width: fit-content;
+}
+
+.abh-filter-button {
+  margin-bottom: 3px;
 }

@@ -1,10 +1,17 @@
 package io.jenkins.plugins.agent_build_history;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import hudson.model.Computer;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Node;
 import hudson.slaves.DumbSlave;
+import java.io.File;
+import java.util.List;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -13,14 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
-
-import java.io.File;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @WithJenkins
 class AgentBuildHistoryTest {
@@ -65,7 +64,8 @@ class AgentBuildHistoryTest {
 
     // Now, let's test the build history with the agent
     AgentBuildHistory history = new AgentBuildHistory(agentComputer);
-    List<AgentExecution> executions = history.getExecutionsForNode(agentComputer.getName(), 0, 10, "startTime", "desc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile(agentComputer.getName(), AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executions = history.getExecutionsForNode(indexLines, agentComputer.getName(), 1, 10, "startTime", "desc", "all");
 
     // Ensure the build history includes the executed build
     assertFalse(executions.isEmpty(), "Build history should not be empty");
@@ -91,7 +91,8 @@ class AgentBuildHistoryTest {
     }
     assertNotNull(computer, "Computer should not be null");
     AgentBuildHistory history = new AgentBuildHistory(computer);
-    List<AgentExecution> executions = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile(computer.getName(), AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executions = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
 
     // Ensure build history includes the test project
     assertFalse(executions.isEmpty(), "Build history should not be empty");
@@ -113,7 +114,8 @@ class AgentBuildHistoryTest {
 
     // Test that the workflow build history is being tracked correctly
     AgentBuildHistory history = new AgentBuildHistory(jenkinsRule.jenkins.getComputer(""));
-    List<AgentExecution> executions = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executions = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
 
     assertFalse(executions.isEmpty(), "Build history should not be empty");
   }
@@ -130,8 +132,9 @@ class AgentBuildHistoryTest {
 
     // Check the pagination of the build history
     AgentBuildHistory history = new AgentBuildHistory(jenkinsRule.jenkins.getComputer(""));
-    List<AgentExecution> executionsPage1 = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
-    List<AgentExecution> executionsPage2 = history.getExecutionsForNode("", 10, 10, "startTime", "desc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executionsPage1 = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
+    List<AgentExecution> executionsPage2 = history.getExecutionsForNode(indexLines, "", 2, 10, "startTime", "desc", "all");
 
     assertEquals(10, executionsPage1.size());
     assertEquals(10, executionsPage2.size());
@@ -149,7 +152,8 @@ class AgentBuildHistoryTest {
 
     // Test sorting by build number
     AgentBuildHistory history = new AgentBuildHistory(jenkinsRule.jenkins.getComputer(""));
-    List<AgentExecution> executions = history.getExecutionsForNode("", 0, 10, "build", "asc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executions = history.getExecutionsForNode(indexLines, "", 1, 10, "build", "asc", "all");
 
     // Check that the executions are sorted by build number
     for (int i = 0; i < executions.size() - 1; i++) {
@@ -173,7 +177,8 @@ class AgentBuildHistoryTest {
 
     // Test that the flow node execution is tracked
     AgentBuildHistory history = new AgentBuildHistory(jenkinsRule.jenkins.getComputer(""));
-    List<AgentExecution> executions = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executions = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
 
     AgentExecution execution = executions.get(0);
     assertFalse(execution.getFlowNodes().isEmpty(), "Flow nodes should be tracked");
@@ -190,14 +195,16 @@ class AgentBuildHistoryTest {
 
     // Verify the builds are in the history
     AgentBuildHistory history = new AgentBuildHistory(jenkinsRule.jenkins.getComputer(""));
-    List<AgentExecution> executionsBeforeDeletion = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executionsBeforeDeletion = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
     assertEquals(2, executionsBeforeDeletion.size());
 
     // Delete the second build
     build2.delete();
 
     // Verify the build is removed from history
-    List<AgentExecution> executionsAfterDeletion = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
+    indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executionsAfterDeletion = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
     assertEquals(1, executionsAfterDeletion.size());
 
     assertEquals(build1.getNumber(), executionsAfterDeletion.get(0).getRun().getNumber(), "The first build should still be in the history");
@@ -213,14 +220,16 @@ class AgentBuildHistoryTest {
 
     // Verify the job is in the history
     AgentBuildHistory history = new AgentBuildHistory(jenkinsRule.jenkins.getComputer(""));
-    List<AgentExecution> executionsBeforeDeletion = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executionsBeforeDeletion = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
     assertFalse(executionsBeforeDeletion.isEmpty(), "Build history should not be empty");
 
     // Delete the job
     project.delete();
 
     // Verify the job's history is removed
-    List<AgentExecution> executionsAfterDeletion = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
+    indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executionsAfterDeletion = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
     assertTrue(executionsAfterDeletion.isEmpty(), "Build history should be empty after job deletion");
   }
 
@@ -235,18 +244,19 @@ class AgentBuildHistoryTest {
 
     // Verify the job is in the history
     AgentBuildHistory history = new AgentBuildHistory(jenkinsRule.jenkins.getComputer(""));
-    List<AgentExecution> executionsBeforeRename = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executionsBeforeRename = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
     assertFalse(executionsBeforeRename.isEmpty(), "Build history should not be empty");
 
     // Rename the job
     project.renameTo("new-job-name");
 
     // Verify the history is updated with the new job name
-    List<AgentExecution> executionsAfterRename = history.getExecutionsForNode("", 0, 10, "startTime", "desc");
+    indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
+    List<AgentExecution> executionsAfterRename = history.getExecutionsForNode(indexLines, "", 1, 10, "startTime", "desc", "all");
     assertFalse(executionsAfterRename.isEmpty(), "Build history should still exist after job rename");
     assertEquals("new-job-name", executionsAfterRename.get(0).getRun().getParent().getName(), "The build should now be associated with the new job name");
 
-    List<String> indexLines = BuildHistoryFileManager.readIndexFile("", AgentBuildHistoryConfig.get().getStorageDir());
     for (String line : indexLines) {
       assertFalse(line.contains("old-job-name"), "The old job name should not be in the index file");
       assertTrue(line.contains("new-job-name"), "The new job name should be in the index file");
@@ -272,7 +282,9 @@ class AgentBuildHistoryTest {
 
     // Verify the build is in the history
     AgentBuildHistory history = new AgentBuildHistory(oldAgent.toComputer());
-    List<AgentExecution> executionsBeforeRename = history.getExecutionsForNode("test-agent-1", 0, 10, "startTime", "desc");
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile("test-agent-1", AgentBuildHistoryConfig.get().getStorageDir());
+
+    List<AgentExecution> executionsBeforeRename = history.getExecutionsForNode( indexLines, "test-agent-1", 1, 10, "startTime", "desc", "all");
     assertFalse(executionsBeforeRename.isEmpty(), "Build history should not be empty");
 
     // Simulate the renaming of the node
@@ -284,7 +296,9 @@ class AgentBuildHistoryTest {
     listener.callOnUpdated(oldAgent, newAgent);
 
     // Verify the history is updated with the new node name
-    List<AgentExecution> executionsAfterRename = history.getExecutionsForNode("renamed-agent", 0, 10, "startTime", "desc");
+    indexLines = BuildHistoryFileManager.readIndexFile("renamed-agent", AgentBuildHistoryConfig.get().getStorageDir());
+
+    List<AgentExecution> executionsAfterRename = history.getExecutionsForNode(indexLines, "renamed-agent", 1, 10, "startTime", "desc", "all");
     assertFalse(executionsAfterRename.isEmpty(), "Build history should still exist after node rename");
   }
 
@@ -336,8 +350,11 @@ class AgentBuildHistoryTest {
     AgentBuildHistory historyAgent1 = new AgentBuildHistory(agent1.toComputer());
     AgentBuildHistory historyAgent2 = new AgentBuildHistory(agent2.toComputer());
     // Get executions for each agent
-    List<AgentExecution> executionsAgent1 = historyAgent1.getExecutionsForNode("agent-1", 0, 10, "startTime", "desc");
-    List<AgentExecution> executionsAgent2 = historyAgent2.getExecutionsForNode("agent-2", 0, 10, "startTime", "desc");
+    List<String> indexLines1 = BuildHistoryFileManager.readIndexFile("agent-1", AgentBuildHistoryConfig.get().getStorageDir());
+    List<String> indexLines2 = BuildHistoryFileManager.readIndexFile("agent-2", AgentBuildHistoryConfig.get().getStorageDir());
+
+    List<AgentExecution> executionsAgent1 = historyAgent1.getExecutionsForNode(indexLines1, "agent-1", 1, 10, "startTime", "desc", "all");
+    List<AgentExecution> executionsAgent2 = historyAgent2.getExecutionsForNode(indexLines2, "agent-2", 1, 10, "startTime", "desc", "all");
 
     // Ensure there are executions for both agents
     assertFalse(executionsAgent1.isEmpty(), "Build history for agent 1 should not be empty");

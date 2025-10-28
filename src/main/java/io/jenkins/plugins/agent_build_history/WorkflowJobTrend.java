@@ -3,10 +3,8 @@ package io.jenkins.plugins.agent_build_history;
 import hudson.Util;
 import hudson.model.Cause;
 import hudson.model.Node;
-import hudson.model.Result;
 import hudson.model.Run;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import jenkins.console.ConsoleUrlProvider;
 import jenkins.model.Jenkins;
@@ -36,8 +34,6 @@ public class WorkflowJobTrend {
   private static final double MAX_LIKELY_RUNS = 20;
   private static final int MAX_PER_PAGE = 40;
   private final List<WorkflowRunResult> results = new ArrayList<>();
-  private final List<WorkflowRun> runs;
-  private final String statusFilter;
   private final String agentFilter;
   private final boolean filterByAgent;
   private int startNewer;
@@ -45,16 +41,15 @@ public class WorkflowJobTrend {
   private int oldestBuild;
   private int newestBuild;
   private int startBuild;
+  private boolean hasMoreRuns = false;
 
   public WorkflowJobTrend(WorkflowJob job, String statusFilter, String agentFilter, String startBuildString) {
-    this.statusFilter = statusFilter;
     this.agentFilter = agentFilter;
     this.filterByAgent = Util.fixEmptyAndTrim(agentFilter) != null;
     startBuild = Integer.parseInt(startBuildString);
     Run<WorkflowJob, WorkflowRun> lastRun = job.getLastBuild();
     if (lastRun != null) {
       Run<WorkflowJob, WorkflowRun> firstRun = job.getFirstBuild();
-      this.runs = new ArrayList<>();
       newestBuild = lastRun.getNumber();
       if (startBuild == -1) {
         startBuild = newestBuild;
@@ -69,10 +64,14 @@ public class WorkflowJobTrend {
       WorkflowRun n = job.getNearestBuild(startBuild);
       int i = 0;
       while (n != null && i < MAX_PER_PAGE) {
-        if (includeRun(n)) {
-          runs.add(n);
-          i++;
+        if (Utils.includeRun(n.getResult(), statusFilter)) {
+          WorkflowRunResult result = calculate(n);
+          if (result != null) {
+            results.add(result);
+            i++;
+          }
         }
+
         endBuild = n.getNumber() - 1;
         n = n.getPreviousBuild();
       }
@@ -86,8 +85,8 @@ public class WorkflowJobTrend {
       if (startNewer > newestBuild) {
         startNewer = newestBuild;
       }
+      hasMoreRuns = n != null;
     } else {
-      this.runs = Collections.emptyList();
       startOlder = -1;
       startNewer = Integer.MAX_VALUE;
       oldestBuild = -1;
@@ -115,36 +114,15 @@ public class WorkflowJobTrend {
     return startBuild;
   }
 
+  public boolean isHasMoreRuns() {
+    return hasMoreRuns;
+  }
+
   public WorkflowJobTrend run() {
     return this;
   }
 
-  private boolean includeRun(WorkflowRun run) {
-    Result result = run.getResult();
-    if (!"all".equals(statusFilter) && result != null) {
-      if ("success".equals(statusFilter) && result != Result.SUCCESS) {
-        return false;
-      }
-      if ("unstable".equals(statusFilter) && result != Result.UNSTABLE) {
-        return false;
-      }
-      if ("failure".equals(statusFilter) && result != Result.FAILURE) {
-        return false;
-      }
-      if ("aborted".equals(statusFilter) && result != Result.ABORTED) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   public List<WorkflowRunResult> getResults() throws Exception {
-    for (WorkflowRun run : runs) {
-      WorkflowRunResult result = calculate(run);
-      if (result != null) {
-        results.add(result);
-      }
-    }
     return results;
   }
 

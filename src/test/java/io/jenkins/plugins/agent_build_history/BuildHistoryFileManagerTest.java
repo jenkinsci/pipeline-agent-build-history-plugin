@@ -1,21 +1,22 @@
 package io.jenkins.plugins.agent_build_history;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Run;
+import hudson.model.queue.QueueTaskFuture;
+import java.io.File;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.SleepBuilder;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
-
-import java.io.File;
-import java.util.List;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @WithJenkins
 class BuildHistoryFileManagerTest {
@@ -31,13 +32,54 @@ class BuildHistoryFileManagerTest {
   }
 
   @Test
+  void testUpdateResult() throws Exception {
+    String nodeName = "test-node";
+    String jobName = "test-job";
+    jenkinsRule.jenkins.setNumExecutors(2);
+
+    FreeStyleProject project = jenkinsRule.createFreeStyleProject(jobName);
+    project.setConcurrentBuild(true);
+    project.getBuildersList().add(new SleepBuilder(1000)); // Simulate some build time
+
+    // Simulate a build (Run) by triggering a build and waiting for completion
+    Run<?, ?> run1 = project.scheduleBuild2(0).waitForStart();
+    Run<?, ?> run2 = project.scheduleBuild2(0).waitForStart();
+
+    // Simulate adding a run to the node index
+    BuildHistoryFileManager.addRunToNodeIndex(nodeName, run1, storageDir.getAbsolutePath());
+    BuildHistoryFileManager.addRunToNodeIndex(nodeName, run2, storageDir.getAbsolutePath());
+
+    List<String> indexEntries = BuildHistoryFileManager.readIndexFile(nodeName, storageDir.getAbsolutePath());
+    assertEquals(2, indexEntries.size());
+    assertTrue(indexEntries.get(0).contains(jobName+";1;"), "Index should contain build number");
+    assertFalse(indexEntries.get(0).contains("SUCCESS"), "Index should not contain the updated result");
+    assertTrue(indexEntries.get(1).contains(jobName+";2;"), "Index should contain build number");
+    assertFalse(indexEntries.get(1).contains("SUCCESS"), "Index should not contain the updated result");
+
+    jenkinsRule.waitForCompletion(run1);
+    jenkinsRule.waitForCompletion(run2);
+
+    // Update the result of the run
+    BuildHistoryFileManager.updateResult(nodeName, run1, storageDir.getAbsolutePath());
+    BuildHistoryFileManager.updateResult(nodeName, run2, storageDir.getAbsolutePath());
+
+    // Verify that the index file contains the updated result
+    indexEntries = BuildHistoryFileManager.readIndexFile(nodeName, storageDir.getAbsolutePath());
+    assertEquals(2, indexEntries.size());
+    assertTrue(indexEntries.get(0).contains(jobName+";1;"), "Index should contain build number");
+    assertTrue(indexEntries.get(0).contains("SUCCESS"), "Index should contain the updated result");
+    assertTrue(indexEntries.get(1).contains(jobName+";2;"), "Index should contain build number");
+    assertTrue(indexEntries.get(1).contains("SUCCESS"), "Index should contain the updated result");
+  }
+
+  @Test
   void testAddRunToNodeIndex() throws Exception {
     String nodeName = "test-node";
     String jobName = "test-job";
     int buildNumber = 1;
 
     // Simulate adding a run to the node index
-    BuildHistoryFileManager.addRunToNodeIndex(nodeName, createDummyRun(jobName, buildNumber), storageDir.getAbsolutePath());
+    BuildHistoryFileManager.addRunToNodeIndex(nodeName, createDummyRun(jobName), storageDir.getAbsolutePath());
 
     // Verify that the index file has been created
     File indexFile = new File(storageDir, nodeName + "_index.txt");
@@ -56,7 +98,7 @@ class BuildHistoryFileManagerTest {
     int buildNumber = 1;
 
     // Add a run to the node index
-    BuildHistoryFileManager.addRunToNodeIndex(nodeName, createDummyRun(jobName, buildNumber), storageDir.getAbsolutePath());
+    BuildHistoryFileManager.addRunToNodeIndex(nodeName, createDummyRun(jobName), storageDir.getAbsolutePath());
 
     // Verify that the entry exists
     List<String> indexEntriesBeforeDeletion = BuildHistoryFileManager.readIndexFile(nodeName, storageDir.getAbsolutePath());
@@ -78,7 +120,7 @@ class BuildHistoryFileManagerTest {
     int buildNumber = 1;
 
     // Add a run to the old node
-    BuildHistoryFileManager.addRunToNodeIndex(oldNodeName, createDummyRun(jobName, buildNumber), storageDir.getAbsolutePath());
+    BuildHistoryFileManager.addRunToNodeIndex(oldNodeName, createDummyRun(jobName), storageDir.getAbsolutePath());
 
     // Rename the node files
     BuildHistoryFileManager.renameNodeFiles(oldNodeName, newNodeName, storageDir.getAbsolutePath());
@@ -101,8 +143,8 @@ class BuildHistoryFileManagerTest {
     String nodeName2 = "node-2";
 
     // Add runs to multiple nodes
-    BuildHistoryFileManager.addRunToNodeIndex(nodeName1, createDummyRun("job1", 1), storageDir.getAbsolutePath());
-    BuildHistoryFileManager.addRunToNodeIndex(nodeName2, createDummyRun("job2", 2), storageDir.getAbsolutePath());
+    BuildHistoryFileManager.addRunToNodeIndex(nodeName1, createDummyRun("job1"), storageDir.getAbsolutePath());
+    BuildHistoryFileManager.addRunToNodeIndex(nodeName2, createDummyRun("job2"), storageDir.getAbsolutePath());
 
     // Get all saved node names
     Set<String> savedNodeNames = BuildHistoryFileManager.getAllSavedNodeNames(storageDir.getAbsolutePath());
@@ -120,7 +162,7 @@ class BuildHistoryFileManagerTest {
     String newJobName = "new-job";
     int buildNumber = 1;
 
-    Run<?, ?> run = createDummyRun(oldJobName, buildNumber);
+    Run<?, ?> run = createDummyRun(oldJobName);
 
     // Add a run with the old job name to both nodes
     BuildHistoryFileManager.addRunToNodeIndex(nodeName1, run, storageDir.getAbsolutePath());
@@ -149,14 +191,11 @@ class BuildHistoryFileManagerTest {
   }
 
   // Helper method to create a dummy Run object
-  private Run<?, ?> createDummyRun(String jobName, int buildNumber) throws Exception {
+  private Run<?, ?> createDummyRun(String jobName) throws Exception {
     // Use JenkinsRule to create a FreeStyle project (or any other type of job)
     FreeStyleProject project = jenkinsRule.createFreeStyleProject(jobName);
 
     // Simulate a build (Run) by triggering a build and waiting for completion
-    FreeStyleBuild build = project.scheduleBuild2(0).get();
-
-    // Return the created build (Run)
-    return build;
+    return project.scheduleBuild2(0).get();
   }
 }

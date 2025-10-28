@@ -6,6 +6,7 @@ import hudson.model.Action;
 import hudson.model.Computer;
 import hudson.model.Job;
 import hudson.model.Node;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.util.RunList;
 import jakarta.servlet.http.Cookie;
@@ -56,6 +57,14 @@ public class AgentBuildHistory implements Action {
     return defaultValue; // Fallback to default if cookie not found
   }
 
+  private static int getRequestInteger(StaplerRequest2 req, String name, int defaultValue) {
+    try {
+      return Integer.parseInt(req.getParameter(name));
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
+  }
+
   /*
    * used by jelly
    */
@@ -88,25 +97,23 @@ public class AgentBuildHistory implements Action {
     RunListTable runListTable = new RunListTable(computer.getName());
     //Get Parameters from URL
     StaplerRequest2 req = Stapler.getCurrentRequest2();
-    int page = req.getParameter("page") != null ? Integer.parseInt(req.getParameter("page")) : 1;
-    int pageSize = req.getParameter("pageSize") != null ? Integer.parseInt(req.getParameter("pageSize")) : Integer.parseInt(getCookieValue(req, "pageSize", "20"));
+    int page = req.getParameter("page") != null ? getRequestInteger(req, "page", 1) : 1;
+    int pageSize = req.getParameter("pageSize") != null ? getRequestInteger(req, "pageSize", 20) : Integer.parseInt(getCookieValue(req, "pageSize", "20"));
     String sortColumn = req.getParameter("sortColumn") != null ? req.getParameter("sortColumn") : getCookieValue(req, "sortColumn", "startTime");
     String sortOrder = req.getParameter("sortOrder") != null ? req.getParameter("sortOrder") : getCookieValue(req, "sortOrder", "desc");
-    //Update totalPages depending on pageSize
-    int totalEntries = BuildHistoryFileManager.readIndexFile(computer.getName(), AgentBuildHistoryConfig.get().getStorageDir()).size();
-    totalPages = (int) Math.ceil((double) totalEntries / pageSize);
+    String statusFilter = req.getParameter("status") != null ? req.getParameter("status") : "all";
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile(computer.getName(), AgentBuildHistoryConfig.get().getStorageDir());
 
     LOGGER.finer("Getting runs for node: " + computer.getName() + " page: " + page + " pageSize: " + pageSize + " sortColumn: " + sortColumn + " sortOrder: " + sortOrder);
+    LOGGER.finer("Found " + indexLines.size() + " entries for node " + computer.getName());
 
-    int start = (page - 1) * pageSize;
-    runListTable.setRuns(getExecutionsForNode(computer.getName(), start, pageSize, sortColumn, sortOrder));
+    runListTable.setRuns(getExecutionsForNode(indexLines, computer.getName(), page, pageSize, sortColumn, sortOrder, statusFilter));
     return runListTable;
   }
 
-  public List<AgentExecution> getExecutionsForNode(String nodeName, int start, int limit, String sortColumn, String sortOrder) {
-    String storageDir = AgentBuildHistoryConfig.get().getStorageDir();
-    List<String> indexLines = BuildHistoryFileManager.readIndexFile(nodeName, storageDir);
-    LOGGER.finer("Found " + indexLines.size() + " entries for node " + nodeName);
+  private record Execution(Job<?, ?> job, Run<?, ?> run, int buildNumber) {}
+
+  public List<AgentExecution> getExecutionsForNode(List<String> indexLines, String nodeName, int page, int pageSize, String sortColumn, String sortOrder, String statusFilter) {
     if (indexLines.isEmpty()) {
       return List.of();
     }
@@ -133,33 +140,63 @@ public class AgentBuildHistory implements Action {
       }
       return sortOrder.equals("asc") ? comparison : -comparison;
     });
-    // Apply pagination
-    int end = Math.min(start + limit, indexLines.size());
-    List<String> page = indexLines.subList(start, end);
-    List<AgentExecution> result = new ArrayList<>();
 
-    for (String line : page) {
+    List<AgentExecution> executions = new ArrayList<>();
+    List<Execution> filtered = new ArrayList<>();
+
+    for (String line : indexLines) {
       String[] parts = line.split(BuildHistoryFileManager.separator);
       String jobName = parts[0];
+      Job<?, ?> job = Jenkins.get().getItemByFullName(jobName, Job.class);
+      if (job == null) {
+        continue;
+      }
       int buildNumber = Integer.parseInt(parts[1]);
-      // Load execution using deserialization
-      AgentExecution execution = loadSingleExecution(jobName, buildNumber);
+      Result result;
+      Run<?, ?> run = null;
+      if (parts.length > 3) {
+        result = Result.fromString(parts[3]);
+      } else {
+        run = job.getBuildByNumber(buildNumber);
+        if (run == null) {
+          continue;
+        }
+        result = run.getResult();
+      }
+      if (!Utils.includeRun(result, statusFilter)) {
+        continue;
+      }
+      filtered.add(new Execution(job, run, buildNumber));
+    }
+
+    // Apply pagination
+    int start = Math.min(filtered.size(), (page - 1) * pageSize);
+    int end = Math.min(start + pageSize, filtered.size());
+
+    int totalEntries = filtered.size();
+    totalPages = (int) Math.ceil((double) totalEntries / pageSize);
+
+    List<Execution> paginated = filtered.subList(start, end);
+    // Load execution using deserialization
+    for (Execution exec : paginated) {
+      AgentExecution execution = loadSingleExecution(exec);
       if (execution != null) {
-        result.add(execution);
+        executions.add(execution);
       }
     }
-    LOGGER.finer("Returning " + result.size() + " entries for node " + nodeName);
-    return result;
+    LOGGER.finer("Returning " + executions.size() + " entries for node " + nodeName);
+    return executions;
   }
 
-  public static AgentExecution loadSingleExecution(String jobName, int buildNumber) {
-    Job<?, ?> job = Jenkins.get().getItemByFullName(jobName, Job.class);
-    Run<?, ?> run = null;
-    if (job != null) {
-      run = job.getBuildByNumber(buildNumber);
+  private static AgentExecution loadSingleExecution(Execution exec) {
+    Run<?, ?> run;
+    if (exec.run != null) {
+      run = exec.run;
+    } else {
+      run = exec.job.getBuildByNumber(exec.buildNumber);
     }
     if (run == null) {
-      LOGGER.info("Run not found for " + jobName + " #" + buildNumber);
+      LOGGER.fine("Run not found for " + exec.job.getFullName() + " #" + exec.buildNumber);
       return null;
     }
     LOGGER.finer("Loading run " + run.getFullDisplayName());
