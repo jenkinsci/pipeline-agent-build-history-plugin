@@ -59,6 +59,10 @@ public class AgentBuildHistory implements Action {
 
   private static int getRequestInteger(StaplerRequest2 req, String name, int defaultValue) {
     try {
+      String value = req.getParameter(name);
+      if (value == null) {
+        return defaultValue;
+      }
       return Integer.parseInt(req.getParameter(name));
     } catch (NumberFormatException e) {
       return defaultValue;
@@ -97,8 +101,8 @@ public class AgentBuildHistory implements Action {
     RunListTable runListTable = new RunListTable(computer.getName());
     //Get Parameters from URL
     StaplerRequest2 req = Stapler.getCurrentRequest2();
-    int page = req.getParameter("page") != null ? getRequestInteger(req, "page", 1) : 1;
-    int pageSize = req.getParameter("pageSize") != null ? getRequestInteger(req, "pageSize", 20) : Integer.parseInt(getCookieValue(req, "pageSize", "20"));
+    int page = getRequestInteger(req, "page", 1);
+    int pageSize = getRequestInteger(req, "pageSize", Integer.parseInt(getCookieValue(req, "pageSize", "20")));
     String sortColumn = req.getParameter("sortColumn") != null ? req.getParameter("sortColumn") : getCookieValue(req, "sortColumn", "startTime");
     String sortOrder = req.getParameter("sortOrder") != null ? req.getParameter("sortOrder") : getCookieValue(req, "sortOrder", "desc");
     String statusFilter = req.getParameter("status") != null ? req.getParameter("status") : "all";
@@ -136,7 +140,6 @@ public class AgentBuildHistory implements Action {
           }
           break;
         default:
-          comparison = 0;
       }
       return sortOrder.equals("asc") ? comparison : -comparison;
     });
