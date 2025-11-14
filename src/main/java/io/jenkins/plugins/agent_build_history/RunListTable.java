@@ -89,7 +89,7 @@ public class RunListTable extends ProgressiveRendering {
   }
 
   private String formatStartTime(long startTimeInMillis) {
-    SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss:SSS");
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     return formatter.format(new Date(startTimeInMillis));
   }
 
