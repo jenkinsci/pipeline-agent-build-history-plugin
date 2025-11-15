@@ -81,6 +81,7 @@ public class AgentBuildHistory implements Action {
     return totalPages;
   }
 
+  @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
   public Api getApi() {
     if (!loaded) {
       loaded = true;

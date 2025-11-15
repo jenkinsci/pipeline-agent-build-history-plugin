@@ -58,7 +58,7 @@ public class RunListTable {
   }
 
   @ExportedBean(defaultVisibility = 2)
-  public class RunResult {
+  public static class RunResult {
     private final Job<?, ?> job;
     private final Run<?, ?> run;
     private String cause;

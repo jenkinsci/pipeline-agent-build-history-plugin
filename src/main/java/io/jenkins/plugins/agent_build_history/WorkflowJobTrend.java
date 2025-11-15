@@ -299,7 +299,7 @@ public class WorkflowJobTrend {
     return null;
   }
 
-  public class AgentDuration {
+  public static class AgentDuration {
     private final long startTime;
     private final long endTime;
 
