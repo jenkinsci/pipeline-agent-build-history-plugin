@@ -1,11 +1,14 @@
 package io.jenkins.plugins.agent_build_history;
 
 import hudson.model.Action;
+import hudson.model.Api;
 import hudson.model.Item;
 import org.jenkinsci.plugins.workflow.cps.replay.ReplayAction;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.verb.POST;
 
 public class WorkflowJobHistoryAction implements Action {
@@ -35,8 +38,21 @@ public class WorkflowJobHistoryAction implements Action {
     return "extendedBuildHistory";
   }
 
-  public WorkflowJobTrend getHandler(String statusFilter, String agentFilter, String startBuild) {
-    return new WorkflowJobTrend(job, statusFilter, agentFilter, startBuild);
+  public WorkflowJobTrend getHandler(String statusFilter, @QueryParameter String agentFilter, @QueryParameter String startBuild) {
+    return new WorkflowJobTrend(job, statusFilter, agentFilter, Utils.getDefaultInt(startBuild, -1), 40);
+  }
+
+  public Api getApi() {
+    StaplerRequest2 req = Stapler.getCurrentRequest2();
+
+    WorkflowJobTrend handler = new WorkflowJobTrend(job, req.getParameter("status"),
+        req.getParameter("agentFilter"), Utils.getRequestInteger(req, "startBuild", -1),
+        Utils.getRequestInteger(req, "limit", 100));
+    String uri = req.getRequestURI();
+    if (!uri.endsWith("/api/")) {
+      handler.compute();
+    }
+    return new Api(handler);
   }
 
   @POST

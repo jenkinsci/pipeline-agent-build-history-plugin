@@ -51,3 +51,10 @@ Runs can be filtered by result and/or by agent used.
 
 
 ![trend.png](docs/trend.png)
+
+
+## API
+The plugin exposes a REST API to get the extended build history for agents and jobs in JSON and XML format similar to other Jenkins APIs.
+Go to `/job/<jobname>/extendedBuildHistory/api/` or
+`/computer/<agentname>/extendedBuildHistory/api/` for more details.
+

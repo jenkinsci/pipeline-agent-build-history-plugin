@@ -20,6 +20,8 @@ import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
 @Restricted(NoExternalUse.class)
 public class AgentExecution implements Comparable<AgentExecution> {
@@ -82,6 +84,7 @@ public class AgentExecution implements Comparable<AgentExecution> {
     return compare;
   }
 
+  @ExportedBean(defaultVisibility = 4)
   public class FlowNodeExecution implements Comparable<FlowNodeExecution> {
     private final String nodeId;
     private Status status;
@@ -134,6 +137,7 @@ public class AgentExecution implements Comparable<AgentExecution> {
       }
     }
 
+    @Exported
     public long getDuration() {
       long endTime = getNodeTime(getEndNode());
       if (endTime == 0) {
@@ -165,6 +169,7 @@ public class AgentExecution implements Comparable<AgentExecution> {
       return Objects.hash(startTime);
     }
 
+    @Exported
     public String getNodeId() {
       return nodeId;
     }
@@ -173,6 +178,7 @@ public class AgentExecution implements Comparable<AgentExecution> {
       return nodeName;
     }
 
+    @Exported(name = "status")
     public Status getFlowNodeStatus() {
       long endTime = getNodeTime(getEndNode());
       if (endTime == 0) {
@@ -212,6 +218,11 @@ public class AgentExecution implements Comparable<AgentExecution> {
     public String getStartTimeSince() {
       long duration = (new GregorianCalendar()).getTimeInMillis() - startTime;
       return Util.getTimeSpanString(duration);
+    }
+
+    @Exported
+    public long getStartTime() {
+      return startTime;
     }
   }
 
