@@ -2,7 +2,7 @@
 <j:jelly xmlns:j="jelly:core">
   <h2>Filtering the extended job history</h2>
   <p>
-    This API endpoint supports filtering the build history by various parameters. You can use query parameters to specify your filters. For example:
+    This API endpoint supports filtering the build history by build status:
     <ul>
       <li><code>status</code>: Filter builds by their status. Possible values: <code>all</code>, <code>SUCCESS</code>, <code>UNSTABLE</code>,
         <code>FAILURE</code>, <code>ABORTED</code>
