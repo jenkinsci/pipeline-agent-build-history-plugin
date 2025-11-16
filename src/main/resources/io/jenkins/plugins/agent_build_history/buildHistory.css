@@ -40,10 +40,6 @@
   width: auto;
 }
 
-.abh-trend--table tbody>tr>td {
-  height: auto!important;
-}
-
 .abh-trend--filter {
   display: flex;
   gap: 10px;
@@ -87,7 +83,7 @@
 .abh-actions > div {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 0.25rem;
   padding: 0 15px;
 }
 

@@ -199,7 +199,7 @@
               </td>
               <td class="jenkins-table__cell--tight">
                 <div class="jenkins-table__cell__button-wrapper">
-                  <a href="${rootURL}/${run.url}console" class="jenkins-table__button" tooltip="${%View Console Output}">
+                  <a href="${rootURL}/${run.url}console" class="jenkins-button jenkins-button--tertiary" tooltip="${%View Console Output}">
                     <l:icon src="symbol-terminal" alt="${%Console output}"/>
                   </a>
                 </div>

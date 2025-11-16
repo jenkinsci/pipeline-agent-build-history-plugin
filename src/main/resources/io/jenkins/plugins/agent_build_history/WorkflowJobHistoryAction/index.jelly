@@ -157,11 +157,11 @@
                 <td class="jenkins-table__cell--tight abh-actions">
                   <div>
                     <div class="jenkins-table__cell__button-wrapper">
-                      <a href="${result.consoleUrl}" class="jenkins-table__button"><l:icon src="symbol-terminal" alt="${%Console output}"/> </a>
+                      <a href="${result.consoleUrl}" class="jenkins-button jenkins-button--tertiary"><l:icon src="symbol-terminal" alt="${%Console output}"/> </a>
                     </div>
                     <j:if test="${it.hasReplayPermission(run)}">
                       <div class="jenkins-table__cell__button-wrapper">
-                        <a href="#" class="jenkins-table__button abh-rerun__button" data-runid="${run.number}" tooltip="${%Replay}"><l:icon src="symbol-arrow-redo-outline plugin-ionicons-api" alt="${%Rerun}"/> </a>
+                        <a href="#" class="jenkins-button jenkins-button--tertiary abh-rerun__button" data-runid="${run.number}" tooltip="${%Replay}"><l:icon src="symbol-arrow-redo-outline plugin-ionicons-api" alt="${%Rerun}"/> </a>
                       </div>
                     </j:if>
                   </div>
