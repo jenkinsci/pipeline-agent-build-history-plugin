@@ -1,0 +1,27 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core">
+  <h2>Filtering the extended job history</h2>
+  <p>
+    This API endpoint supports filtering the build history by build status:
+    <ul>
+      <li><code>status</code>: Filter builds by their status. Possible values: <code>all</code>, <code>SUCCESS</code>, <code>UNSTABLE</code>,
+        <code>FAILURE</code>, <code>ABORTED</code>
+      </li>
+    </ul>
+  </p>
+  <h2>Limiting the number of results</h2>
+  <p>
+  By default only the first 100 builds are returned. To get more results, you can either use the parameter <code>limit</code> or use the pagination parameter <code>page</code>.
+  </p>
+  <h2>Example</h2>
+  <p>
+    To retrieve the last 50 failed builds, you would use the following API call:
+    <br/>
+    <pre>GET /computer/&amp;lt;agent-name&gt;/extendedBuildHistory/api/xml?status=FAILURE&amp;amp;limit=50</pre>
+  </p>
+  <p>
+    To retrieve the successful build 51 to 100 you would use the following API call:
+    <br/>
+    <pre>GET /computer/&amp;lt;agent-name&gt;/extendedBuildHistory/api/xml?status=SUCCESS&amp;amp;limit=50&amp;page=2</pre>
+  </p>
+</j:jelly>

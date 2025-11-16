@@ -3,6 +3,7 @@ package io.jenkins.plugins.agent_build_history;
 import hudson.Util;
 import hudson.model.Cause;
 import hudson.model.Node;
+import hudson.model.Result;
 import hudson.model.Run;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,10 @@ import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.support.actions.WorkspaceActionImpl;
 import org.jenkinsci.plugins.workflow.support.steps.ExecutorStep;
 import org.kohsuke.accmod.restrictions.suppressions.SuppressRestrictedWarnings;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
+@ExportedBean
 public class WorkflowJobTrend {
 
   /**
@@ -31,8 +35,6 @@ public class WorkflowJobTrend {
    * The first increment will be sized as if this many runs will be in the total,
    * but then like Zeno’s paradox we will never seem to finish until we actually do.
    */
-  private static final double MAX_LIKELY_RUNS = 20;
-  private static final int MAX_PER_PAGE = 40;
   private final List<WorkflowRunResult> results = new ArrayList<>();
   private final String agentFilter;
   private final boolean filterByAgent;
@@ -42,11 +44,20 @@ public class WorkflowJobTrend {
   private int newestBuild;
   private int startBuild;
   private boolean hasMoreRuns = false;
+  private final WorkflowJob job;
+  private final int limit;
+  private final String statusFilter;
 
-  public WorkflowJobTrend(WorkflowJob job, String statusFilter, String agentFilter, String startBuildString) {
+  public WorkflowJobTrend(WorkflowJob job, String statusFilter, String agentFilter, int startBuild, int limit) {
     this.agentFilter = agentFilter;
+    this.job = job;
     this.filterByAgent = Util.fixEmptyAndTrim(agentFilter) != null;
-    startBuild = Integer.parseInt(startBuildString);
+    this.startBuild = startBuild;
+    this.limit = limit;
+    this.statusFilter = statusFilter;
+  }
+
+  void compute() {
     Run<WorkflowJob, WorkflowRun> lastRun = job.getLastBuild();
     if (lastRun != null) {
       Run<WorkflowJob, WorkflowRun> firstRun = job.getFirstBuild();
@@ -54,8 +65,8 @@ public class WorkflowJobTrend {
       if (startBuild == -1) {
         startBuild = newestBuild;
       }
-      if (startBuild < MAX_PER_PAGE) {
-        startBuild = MAX_PER_PAGE;
+      if (startBuild < limit) {
+        startBuild = limit;
       }
       if (startBuild > newestBuild) {
         startBuild = newestBuild;
@@ -63,7 +74,7 @@ public class WorkflowJobTrend {
       int endBuild = startBuild;
       WorkflowRun n = job.getNearestBuild(startBuild);
       int i = 0;
-      while (n != null && i < MAX_PER_PAGE) {
+      while (n != null && i < limit) {
         if (Utils.includeRun(n.getResult(), statusFilter)) {
           WorkflowRunResult result = calculate(n);
           if (result != null) {
@@ -80,8 +91,8 @@ public class WorkflowJobTrend {
       if (firstRun != null) {
         oldestBuild = firstRun.getNumber();
       }
-      oldestBuild += MAX_PER_PAGE - 1;
-      startNewer = startBuild + MAX_PER_PAGE;
+      oldestBuild += limit - 1;
+      startNewer = startBuild + limit;
       if (startNewer > newestBuild) {
         startNewer = newestBuild;
       }
@@ -92,6 +103,16 @@ public class WorkflowJobTrend {
       oldestBuild = -1;
       newestBuild = -1;
     }
+  }
+
+  @Exported
+  public WorkflowJob getJob() {
+    return job;
+  }
+
+  @Exported
+  public String getFullName() {
+    return job.getFullName();
   }
 
   public int getStartNewer() {
@@ -118,20 +139,19 @@ public class WorkflowJobTrend {
     return hasMoreRuns;
   }
 
-  public WorkflowJobTrend run() {
-    return this;
-  }
-
+  @Exported(visibility = 999, name = "runs")
   public List<WorkflowRunResult> getResults() throws Exception {
     return results;
   }
 
+  @ExportedBean(defaultVisibility = 3)
   public static class NodeExecution {
     private String builtOn;
     private String builtOnStr;
-    private String duration;
     private String label;
+    private AgentDuration agentDuration;
 
+    @Exported
     public String getBuiltOn() {
       return builtOn;
     }
@@ -140,15 +160,36 @@ public class WorkflowJobTrend {
       return builtOnStr;
     }
 
-    public String getDuration() {
-      return duration;
+    public String getDurationString() {
+      if (agentDuration == null) {
+        return "n/a";
+      }
+      return agentDuration.getDurationString();
     }
 
+    @Exported
+    public long getDuration() {
+      if (agentDuration == null) {
+        return 0;
+      }
+      return agentDuration.getEndTime() - agentDuration.getStartTime();
+    }
+
+    @Exported
     public String getLabel() {
       return label;
     }
+
+    @Exported
+    public long getStartTime() {
+      if (agentDuration == null) {
+        return 0;
+      }
+      return agentDuration.getStartTime();
+    }
   }
 
+  @ExportedBean(defaultVisibility = 2)
   public static class WorkflowRunResult {
     private final WorkflowRun run;
     private List<NodeExecution> agents = new ArrayList<>();
@@ -161,10 +202,12 @@ public class WorkflowJobTrend {
       agents.add(exec);
     }
 
+    @Exported(visibility = 999, name = "build")
     public WorkflowRun getRun() {
       return run;
     }
 
+    @Exported(visibility = 999, name = "agents")
     public List<NodeExecution> getAgents() {
       return agents;
     }
@@ -173,6 +216,7 @@ public class WorkflowJobTrend {
       return ConsoleUrlProvider.getRedirectUrl(run);
     }
 
+    @Exported(name = "cause")
     public String getShortDescription() {
       List<Cause> causeList = run.getCauses();
       if (!causeList.isEmpty()) {
@@ -180,6 +224,11 @@ public class WorkflowJobTrend {
       } else {
         return "Unknown Cause";
       }
+    }
+
+    @Exported
+    public Result getResult() {
+      return run.getResult();
     }
   }
 
@@ -228,7 +277,7 @@ public class WorkflowJobTrend {
                     }
                   }
                   BlockEndNode endNode = startNode.getEndNode();
-                  nodeExecution.duration = getDurationString(startNode, endNode);
+                  nodeExecution.agentDuration = getAgentDuration(startNode, endNode);
                   ArgumentsActionImpl args = parentNode.getAction(ArgumentsActionImpl.class);
                   if (args != null) {
                     String label = (String) args.getArgumentValue("label");
@@ -250,10 +299,33 @@ public class WorkflowJobTrend {
     return null;
   }
 
-  public String getDurationString(BlockStartNode startNode, BlockEndNode endNode) {
+  public static class AgentDuration {
+    private final long startTime;
+    private final long endTime;
+
+    public AgentDuration(long startTime, long endTime) {
+      this.startTime = startTime;
+      this.endTime = endTime;
+    }
+
+    public long getStartTime() {
+      return startTime;
+    }
+    public long getEndTime() {
+      return endTime;
+    }
+    public String getDurationString() {
+      if (endTime == 0) {
+        return Messages.InProgressDuration(Util.getTimeSpanString(System.currentTimeMillis() - startTime));
+      }
+      return Util.getTimeSpanString(endTime - startTime);
+    }
+  }
+
+  public AgentDuration getAgentDuration(BlockStartNode startNode, BlockEndNode endNode) {
     TimingAction startTime = startNode.getAction(TimingAction.class);
     if (startTime == null) {
-      return "n/a";
+      return null;
     }
     long endTimeLong = 0;
     if (endNode != null) {
@@ -262,9 +334,6 @@ public class WorkflowJobTrend {
         endTimeLong = endTime.getStartTime();
       }
     }
-    if (endTimeLong == 0) {
-      return Messages.InProgressDuration(Util.getTimeSpanString(System.currentTimeMillis() - startTime.getStartTime()));
-    }
-    return Util.getTimeSpanString(endTimeLong - startTime.getStartTime());
+    return new AgentDuration(startTime.getStartTime(), endTimeLong);
   }
 }

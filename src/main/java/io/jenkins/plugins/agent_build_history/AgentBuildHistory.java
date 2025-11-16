@@ -3,6 +3,7 @@ package io.jenkins.plugins.agent_build_history;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
+import hudson.model.Api;
 import hudson.model.Computer;
 import hudson.model.Job;
 import hudson.model.Node;
@@ -57,18 +58,6 @@ public class AgentBuildHistory implements Action {
     return defaultValue; // Fallback to default if cookie not found
   }
 
-  private static int getRequestInteger(StaplerRequest2 req, String name, int defaultValue) {
-    try {
-      String value = req.getParameter(name);
-      if (value == null) {
-        return defaultValue;
-      }
-      return Integer.parseInt(req.getParameter(name));
-    } catch (NumberFormatException e) {
-      return defaultValue;
-    }
-  }
-
   /*
    * used by jelly
    */
@@ -93,6 +82,28 @@ public class AgentBuildHistory implements Action {
   }
 
   @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+  public Api getApi() {
+    if (!loaded) {
+      loaded = true;
+      Timer.get().schedule(AgentBuildHistory::load, 0, TimeUnit.SECONDS);
+    }
+    RunListTable runListTable = new RunListTable(computer.getName());
+    //Get Parameters from URL
+    StaplerRequest2 req = Stapler.getCurrentRequest2();
+    int pageSize = Utils.getRequestInteger(req, "limit", 100);
+    int page = Utils.getRequestInteger(req, "page", 1);
+    String statusFilter = req.getParameter("status") != null ? req.getParameter("status") : "all";
+    List<String> indexLines = BuildHistoryFileManager.readIndexFile(computer.getName(), AgentBuildHistoryConfig.get().getStorageDir());
+
+    String uri = req.getRequestURI();
+    if (!uri.endsWith("/api/")) {
+      runListTable.setRuns(getExecutionsForNode(indexLines, computer.getName(), page, pageSize, "startTime", "desc", statusFilter));
+      runListTable.compute();
+    }
+    return new Api(runListTable);
+  }
+
+  @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
   public RunListTable getHandler() {
     if (!loaded) {
       loaded = true;
@@ -101,8 +112,8 @@ public class AgentBuildHistory implements Action {
     RunListTable runListTable = new RunListTable(computer.getName());
     //Get Parameters from URL
     StaplerRequest2 req = Stapler.getCurrentRequest2();
-    int page = getRequestInteger(req, "page", 1);
-    int pageSize = getRequestInteger(req, "pageSize", Integer.parseInt(getCookieValue(req, "pageSize", "20")));
+    int page = Utils.getRequestInteger(req, "page", 1);
+    int pageSize = Utils.getRequestInteger(req, "pageSize", Integer.parseInt(getCookieValue(req, "pageSize", "20")));
     String sortColumn = req.getParameter("sortColumn") != null ? req.getParameter("sortColumn") : getCookieValue(req, "sortColumn", "startTime");
     String sortOrder = req.getParameter("sortOrder") != null ? req.getParameter("sortOrder") : getCookieValue(req, "sortOrder", "desc");
     String statusFilter = req.getParameter("status") != null ? req.getParameter("status") : "all";
@@ -112,6 +123,7 @@ public class AgentBuildHistory implements Action {
     LOGGER.finer("Found " + indexLines.size() + " entries for node " + computer.getName());
 
     runListTable.setRuns(getExecutionsForNode(indexLines, computer.getName(), page, pageSize, sortColumn, sortOrder, statusFilter));
+    runListTable.compute();
     return runListTable;
   }
 

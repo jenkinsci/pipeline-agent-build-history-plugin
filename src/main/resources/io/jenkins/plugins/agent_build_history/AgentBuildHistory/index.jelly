@@ -3,22 +3,6 @@
   <l:layout title="${%Extended Build History}">
     <st:include page="sidepanel.jelly" it="${it.getComputer()}"/>
     <l:main-panel>
-      <template id="jenkins-build-status-icons">
-        <l:icon src="symbol-status-blue" id="blue" />
-        <l:icon src="symbol-status-blue-anime" id="blue-anime" />
-        <l:icon src="symbol-status-yellow" id="yellow" />
-        <l:icon src="symbol-status-yellow-anime" id="yellow-anime" />
-        <l:icon src="symbol-status-red" id="red" />
-        <l:icon src="symbol-status-red-anime" id="red-anime" />
-        <l:icon src="symbol-status-nobuilt" id="nobuilt" />
-        <l:icon src="symbol-status-nobuilt-anime" id="nobuilt-anime" />
-        <l:icon src="symbol-status-aborted" id="aborted" />
-        <l:icon src="symbol-status-aborted-anime" id="aborted-anime" />
-        <l:icon src="symbol-status-disabled" id="disabled" />
-        <l:icon src="symbol-status-disabled-anime" id="disabled-anime" />
-        <l:icon src="symbol-terminal" id="console" alt="${%Console output}"/>
-        <l:icon src="symbol-chevron-down" id="chevron-down" alt="${%Show all Agents}"/>
-      </template>
       <h1>
         ${%title(it.computer.displayName)}
       </h1>
@@ -34,7 +18,6 @@
       <t:setIconSize/>
       <st:adjunct includes="io.jenkins.plugins.agent_build_history.buildHistory" />
       <st:adjunct includes="io.jenkins.plugins.agent_build_history.AgentBuildHistory.history" />
-      <l:progressiveRendering handler="${it.handler}" callback="abhDisplayExtendedBuildHistory"/>
       <!-- Pagination Controls -->
       <j:set var="page" value="${request.getParameter('page') != null ? request.getParameter('page') : 1}"/>
       <j:set var="pageSize" value="${request.getParameter('pageSize') != null ? request.getParameter('pageSize') : h.getCookie(request, 'pageSize', '20')}"/>
@@ -99,7 +82,7 @@
       </div>
 
       <table class="jenkins-table ${iconSize == '16x16' ? 'jenkins-table--small' : iconSize == '24x24' ? 'jenkins-table--medium' : ''}"
-             id="projectStatus" style="display: none; width: auto;" data-icon-size-class="${iconSizeClass}"
+             id="projectStatus" style="width: auto;" data-icon-size-class="${iconSizeClass}"
              data-show-text="${%Show nodes}" data-hide-text="${%Hide nodes}" >
         <thead>
           <tr>
@@ -144,7 +127,86 @@
             <th class="jenkins-table__cell--tight"></th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody>
+          ${it.handler.results == null}
+          <j:forEach var="result" items="${it.handler.results}">
+            <j:set var="run" value="${result.run}"/>
+            <j:set var="job" value="${result.job}"/>
+            <j:set var="ic" value="${run.iconColor}"/>
+            <j:set var="buildStatusSummary" value="${run.buildStatusSummary}"/>
+
+            <tr>
+              <td data="${ic.ordinal()}" class="jenkins-table__cell--tight jenkins-table__icon abh-status">
+                <div>
+                  <l:icon alt="${ic.description}" src="symbol-status-${ic.iconName}"
+                          tooltip="${ic.description}"/>
+                </div>
+              </td>
+              <td class="no-wrap">
+                <a href="${rootURL}/${result.job.url}" class='jenkins-table__link model-link inside'><span><l:breakable value="${job.fullDisplayName}"/></span></a>
+                <a href="${rootURL}/${run.url}" class='jenkins-table__link jenkins-table__badge model-link inside'><span>${run.displayName}</span></a>
+              </td>
+              <td>
+                ${result.cause}
+              </td>
+              <td>
+                ${result.startTime}
+              </td>
+              <td>
+                ${run.timestampString}
+                <j:if test="${result.executions.size() &gt; 0}">
+                  <j:forEach var="node" items="${result.executions}">
+                    <div class="abh-hidden jenkins-hidden">
+                      ${node.startTimeSince}
+                    </div>
+                  </j:forEach>
+                </j:if>
+              </td>
+              <td>
+                ${run.durationString}
+                <j:if test="${result.executions.size() &gt; 0}">
+                  <j:forEach var="node" items="${result.executions}">
+                    <div class="abh-hidden jenkins-hidden">
+                      ${node.durationString}
+                    </div>
+                  </j:forEach>
+                </j:if>
+              </td>
+              <td>
+                <div style="${buildStatusSummary.isWorse ? 'color: var(--red)' : null}">${buildStatusSummary.message}</div>
+                <j:if test="${result.executions.size() &gt; 0}">
+                  <j:forEach var="node" items="${result.executions}">
+                    <j:set var="nodeStatus" value="${node.flowNodeStatus}"/>
+                    <div class="abh-hidden jenkins-hidden" style="${nodeStatus.isWorse() ? 'color: var(--red)' : null}">
+                      ${nodeStatus.message}
+                    </div>
+                  </j:forEach>
+                </j:if>
+              </td>
+              <td>
+                <j:if test="${result.executions.size() &gt; 0}">
+                  <div class="abh-list__button">
+                    <button class="jenkins-button toggle-flow-nodes" tooltip="${%Show nodes}" data-hidden="true">
+                      <l:icon src="symbol-chevron-down" id="chevron-down" alt="${%Show all Agents}"/>
+                    </button>
+                  </div>
+                    <j:forEach var="node" items="${result.executions}">
+                    <div class="abh-hidden jenkins-hidden">
+                      Node: ${node.nodeId}
+                    </div>
+                  </j:forEach>
+                </j:if>
+              </td>
+              <td class="jenkins-table__cell--tight">
+                <div class="jenkins-table__cell__button-wrapper">
+                  <a href="${rootURL}/${run.url}console" class="jenkins-button jenkins-button--tertiary" tooltip="${%View Console Output}">
+                    <l:icon src="symbol-terminal" alt="${%Console output}"/>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </j:forEach>
+        </tbody>
       </table>
       <t:rssBar-with-iconSize/>
     </l:main-panel>
