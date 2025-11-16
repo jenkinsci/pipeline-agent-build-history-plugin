@@ -125,6 +125,7 @@
             <th>${%Status}</th>
             <th/>
             <th class="jenkins-table__cell--tight"></th>
+            <th class="abh-header-left">${%Badges}</th>
           </tr>
         </thead>
         <tbody>
@@ -202,6 +203,13 @@
                   <a href="${rootURL}/${run.url}console" class="jenkins-button jenkins-button--tertiary" tooltip="${%View Console Output}">
                     <l:icon src="symbol-terminal" alt="${%Console output}"/>
                   </a>
+                </div>
+              </td>
+              <td class="jenkins-table__cell--tight">
+                <div class="abh-badges">
+                  <j:forEach var="badge" items="${run.badgeActions}">
+                    <st:include it="${badge}" page="badge.jelly" />
+                  </j:forEach>
                 </div>
               </td>
             </tr>

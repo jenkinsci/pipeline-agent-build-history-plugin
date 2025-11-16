@@ -85,7 +85,7 @@
                   </div>
                 </td>
                 <td data="${run.number}">
-                  <a href="${rootURL}/${run.url}" class="model-link">${run.displayName}</a>
+                  <a href="${rootURL}/${run.url}" class="jenkins-table__link jenkins-table__badge model-link inside">${run.displayName}</a>
                 </td>
                 <td>
                   ${result.shortDescription}
@@ -103,7 +103,7 @@
                         <div class="${index > 0 ? 'abh-hidden jenkins-hidden' : ''}">
                           <j:choose>
                             <j:when test="${agent.builtOn != null}">
-                              <a href="${rootURL}/computer/${agent.builtOn}">${agent.builtOnStr}</a>
+                              <a href="${rootURL}/computer/${agent.builtOn}" class="model-link">${agent.builtOnStr}</a>
                             </j:when>
                             <j:otherwise>
                               ${agent.builtOnStr}
