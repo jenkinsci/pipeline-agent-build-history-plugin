@@ -39,7 +39,9 @@ public class WorkflowJobHistoryAction implements Action {
   }
 
   public WorkflowJobTrend getHandler(String statusFilter, @QueryParameter String agentFilter, @QueryParameter String startBuild) {
-    return new WorkflowJobTrend(job, statusFilter, agentFilter, Utils.getDefaultInt(startBuild, -1), 40);
+    WorkflowJobTrend handler = new WorkflowJobTrend(job, statusFilter, agentFilter, Utils.getDefaultInt(startBuild, -1), 40);
+    handler.compute();
+    return handler;
   }
 
   public Api getApi() {

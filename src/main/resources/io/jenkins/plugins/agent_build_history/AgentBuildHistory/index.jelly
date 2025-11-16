@@ -143,8 +143,8 @@
                 </div>
               </td>
               <td class="no-wrap">
-                <a href="${rootURL}${result.job.url}" class='jenkins-table__link model-link inside'><span><l:breakable value="${job.fullDisplayName}"/></span></a>
-                <a href="${rootURL}${run.url}" class='jenkins-table__link jenkins-table__badge model-link inside'><span>${run.displayName}</span></a>
+                <a href="${rootURL}/${result.job.url}" class='jenkins-table__link model-link inside'><span><l:breakable value="${job.fullDisplayName}"/></span></a>
+                <a href="${rootURL}/${run.url}" class='jenkins-table__link jenkins-table__badge model-link inside'><span>${run.displayName}</span></a>
               </td>
               <td>
                 ${result.cause}
@@ -199,7 +199,7 @@
               </td>
               <td class="jenkins-table__cell--tight">
                 <div class="jenkins-table__cell__button-wrapper">
-                  <a href="${rootURL}${run.url}console" class="jenkins-table__button" tooltip="${%View Console Output}">
+                  <a href="${rootURL}/${run.url}console" class="jenkins-table__button" tooltip="${%View Console Output}">
                     <l:icon src="symbol-terminal" alt="${%Console output}"/>
                   </a>
                 </div>
