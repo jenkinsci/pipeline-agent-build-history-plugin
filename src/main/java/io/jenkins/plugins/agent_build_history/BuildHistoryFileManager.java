@@ -9,9 +9,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,27 +63,31 @@ public class BuildHistoryFileManager {
 
   public static void updateResult(String nodeName, Run<?, ?> run, String storageDir) {
     Object lock = getNodeLock(nodeName);
+    String runIdentifier = run.getParent().getFullName() + separator + run.getNumber() + separator;
     synchronized (lock) {
       List<String> indexLines = readIndexFile(nodeName, storageDir);
-      File indexFile = new File(storageDir + "/" + nodeName + "_index.txt");
-      try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(indexFile), StandardCharsets.UTF_8))) {
+      StringWriter buffer = new StringWriter();
+      try (BufferedWriter writer = new BufferedWriter(buffer)) {
         boolean found = false;
         for (String line : indexLines) {
-          if (line.startsWith(run.getParent().getFullName() + separator + run.getNumber() + separator)) {
+          if (line.startsWith(runIdentifier)) {
             if (!line.endsWith(separator + run.getResult())) {
               writeLine(writer, run);
+              found = true;
             } else {
               writer.write(line);
             }
-            found = true;
           } else {
             writer.write(line);
           }
           writer.newLine();
         }
-        if (!found) {
-          writeLine(writer, run);
-          writer.newLine();
+        if (found) {
+          writer.flush();
+          File indexFile = new File(storageDir + "/" + nodeName + "_index.txt");
+          try (FileWriter fileWriter = new FileWriter(indexFile, StandardCharsets.UTF_8)) {
+            fileWriter.write(buffer.toString());
+          }
         }
       } catch (IOException e) {
         LOGGER.log(Level.WARNING, "Failed to update result in index-file for node " + nodeName, e);
@@ -137,12 +143,13 @@ public class BuildHistoryFileManager {
 
   public static void deleteExecution(String nodeName, String jobName, int buildNumber, String storageDir) {
     Object lock = getNodeLock(nodeName);
+    String runIdentifier = jobName + separator + buildNumber + separator;
     synchronized (lock) {
       List<String> indexLines = readIndexFile(nodeName, storageDir);
       File indexFile = new File(storageDir + "/" + nodeName + "_index.txt");
       try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(indexFile), StandardCharsets.UTF_8))) {
         for (String line : indexLines) {
-          if (!line.startsWith(jobName + separator + buildNumber + separator)) {
+          if (!line.startsWith(runIdentifier)) {
             writer.write(line);
             writer.newLine();
           }

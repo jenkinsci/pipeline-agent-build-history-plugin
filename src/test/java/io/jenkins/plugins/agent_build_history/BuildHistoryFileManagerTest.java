@@ -4,10 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Run;
-import hudson.model.queue.QueueTaskFuture;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
@@ -33,7 +31,8 @@ class BuildHistoryFileManagerTest {
 
   @Test
   void testUpdateResult() throws Exception {
-    String nodeName = "test-node";
+    String nodeName1 = "test-node-1";
+    String nodeName2 = "test-node-2";
     String jobName = "test-job";
     jenkinsRule.jenkins.setNumExecutors(2);
 
@@ -46,30 +45,44 @@ class BuildHistoryFileManagerTest {
     Run<?, ?> run2 = project.scheduleBuild2(0).waitForStart();
 
     // Simulate adding a run to the node index
-    BuildHistoryFileManager.addRunToNodeIndex(nodeName, run1, storageDir.getAbsolutePath());
-    BuildHistoryFileManager.addRunToNodeIndex(nodeName, run2, storageDir.getAbsolutePath());
+    BuildHistoryFileManager.addRunToNodeIndex(nodeName1, run1, storageDir.getAbsolutePath());
+    BuildHistoryFileManager.addRunToNodeIndex(nodeName2, run2, storageDir.getAbsolutePath());
 
-    List<String> indexEntries = BuildHistoryFileManager.readIndexFile(nodeName, storageDir.getAbsolutePath());
-    assertEquals(2, indexEntries.size());
-    assertTrue(indexEntries.get(0).contains(jobName+";1;"), "Index should contain build number");
-    assertFalse(indexEntries.get(0).contains("SUCCESS"), "Index should not contain the updated result");
-    assertTrue(indexEntries.get(1).contains(jobName+";2;"), "Index should contain build number");
-    assertFalse(indexEntries.get(1).contains("SUCCESS"), "Index should not contain the updated result");
+    List<String> indexEntries1 = BuildHistoryFileManager.readIndexFile(nodeName1, storageDir.getAbsolutePath());
+    List<String> indexEntries2 = BuildHistoryFileManager.readIndexFile(nodeName2, storageDir.getAbsolutePath());
+    assertEquals(1, indexEntries1.size());
+    assertEquals(1, indexEntries2.size());
+    assertTrue(indexEntries1.get(0).contains(jobName+";1;"), "Index should contain build number");
+    assertFalse(indexEntries1.get(0).contains("SUCCESS"), "Index should not contain the updated result");
+    assertTrue(indexEntries2.get(0).contains(jobName+";2;"), "Index should contain build number");
+    assertFalse(indexEntries2.get(0).contains("SUCCESS"), "Index should not contain the updated result");
 
     jenkinsRule.waitForCompletion(run1);
     jenkinsRule.waitForCompletion(run2);
 
     // Update the result of the run
-    BuildHistoryFileManager.updateResult(nodeName, run1, storageDir.getAbsolutePath());
-    BuildHistoryFileManager.updateResult(nodeName, run2, storageDir.getAbsolutePath());
+    BuildHistoryFileManager.updateResult(nodeName1, run1, storageDir.getAbsolutePath());
+    BuildHistoryFileManager.updateResult(nodeName2, run2, storageDir.getAbsolutePath());
 
     // Verify that the index file contains the updated result
-    indexEntries = BuildHistoryFileManager.readIndexFile(nodeName, storageDir.getAbsolutePath());
-    assertEquals(2, indexEntries.size());
-    assertTrue(indexEntries.get(0).contains(jobName+";1;"), "Index should contain build number");
-    assertTrue(indexEntries.get(0).contains("SUCCESS"), "Index should contain the updated result");
-    assertTrue(indexEntries.get(1).contains(jobName+";2;"), "Index should contain build number");
-    assertTrue(indexEntries.get(1).contains("SUCCESS"), "Index should contain the updated result");
+    indexEntries1 = BuildHistoryFileManager.readIndexFile(nodeName1, storageDir.getAbsolutePath());
+    indexEntries2 = BuildHistoryFileManager.readIndexFile(nodeName2, storageDir.getAbsolutePath());
+    assertEquals(1, indexEntries1.size());
+    assertEquals(1, indexEntries2.size());
+    assertTrue(indexEntries1.get(0).contains(jobName+";1;"), "Index should contain build number");
+    assertTrue(indexEntries1.get(0).contains("SUCCESS"), "Index should contain the updated result");
+    assertTrue(indexEntries2.get(0).contains(jobName+";2;"), "Index should contain build number");
+    assertTrue(indexEntries2.get(0).contains("SUCCESS"), "Index should contain the updated result");
+
+    // Verify that the index file is not updated when the run was not on that node
+    BuildHistoryFileManager.updateResult(nodeName2, run1, storageDir.getAbsolutePath());
+    BuildHistoryFileManager.updateResult(nodeName1, run2, storageDir.getAbsolutePath());
+    assertEquals(1, indexEntries1.size());
+    assertEquals(1, indexEntries2.size());
+    assertTrue(indexEntries1.get(0).contains(jobName+";1;"), "Index should contain build number");
+    assertTrue(indexEntries1.get(0).contains("SUCCESS"), "Index should contain the updated result");
+    assertTrue(indexEntries2.get(0).contains(jobName+";2;"), "Index should contain build number");
+    assertTrue(indexEntries2.get(0).contains("SUCCESS"), "Index should contain the updated result");
   }
 
   @Test
