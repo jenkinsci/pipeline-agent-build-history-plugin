@@ -38,8 +38,26 @@ public class AgentBuildHistoryListeners {
     @Override
     public void onFinalized(Run<?, ?> run) {
       Set<String> nodeNames = BuildHistoryFileManager.getAllSavedNodeNames(AgentBuildHistoryConfig.get().getStorageDir());
-      for (String nodeName : nodeNames) {
-        BuildHistoryFileManager.updateResult(nodeName, run, AgentBuildHistoryConfig.get().getStorageDir());
+      if (run instanceof AbstractBuild<?, ?> ab) {
+        String nodeName = ab.getBuiltOnStr();
+        if (nodeNames.contains(nodeName)) {
+          BuildHistoryFileManager.updateResult(nodeName, run, AgentBuildHistoryConfig.get().getStorageDir());
+        }
+      } else {
+        HistoryAction action = run.getAction(HistoryAction.class);
+        if (action != null) {
+          nodeNames = action.getAgents();
+        }
+        for (String nodeName : nodeNames) {
+          BuildHistoryFileManager.updateResult(nodeName, run, AgentBuildHistoryConfig.get().getStorageDir());
+        }
+      }
+    }
+
+    @Override
+    public void onInitialize(Run<?, ?> run) {
+      if (run instanceof WorkflowRun wr) {
+        wr.addAction(new HistoryAction());
       }
     }
   }
