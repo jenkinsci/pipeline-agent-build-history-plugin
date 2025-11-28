@@ -2,20 +2,13 @@ package io.jenkins.plugins.agent_build_history;
 
 import hudson.model.Result;
 import hudson.model.Run;
-
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
 public class BuildHistoryFileManager {
 
@@ -43,21 +37,16 @@ public class BuildHistoryFileManager {
   public static List<String> readIndexFile(String nodeName, String storageDir) {
     Object lock = getNodeLock(nodeName);
     synchronized (lock) {
-      List<String> indexLines = new ArrayList<>();
       File indexFile = new File(storageDir + "/" + nodeName + "_index.txt");
-      try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(indexFile), StandardCharsets.UTF_8))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-          indexLines.add(line);
+      if (indexFile.exists()) {
+        try {
+          return Files.readAllLines(indexFile.toPath(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+          LOGGER.log(Level.WARNING, "Failed to read index file for node " + nodeName, e);
+          return Collections.emptyList();
         }
-      } catch (FileNotFoundException e) {
-        LOGGER.log(Level.INFO, "Index file not found for node " + nodeName);
-        return Collections.emptyList();
-      } catch (IOException e) {
-        LOGGER.log(Level.WARNING, "Failed to read index file for node " + nodeName, e);
-        return Collections.emptyList();
       }
-      return indexLines;
+      return Collections.emptyList();
     }
   }
 
@@ -97,6 +86,12 @@ public class BuildHistoryFileManager {
   // Appends a new run entry and updates the index
   public static void addRunToNodeIndex(String nodeName, Run<?, ?> run, String storageDir) {
     Object lock = getNodeLock(nodeName);
+    if (run instanceof WorkflowRun) {
+      HistoryAction action = run.getAction(HistoryAction.class);
+      if (action != null) {
+        action.addAgent(nodeName);
+      }
+    }
     synchronized (lock) {
       // Update index for the node
       File indexFile = new File(storageDir + "/" + nodeName + "_index" + ".txt");
@@ -104,7 +99,7 @@ public class BuildHistoryFileManager {
       String lineMatch = run.getParent().getFullName() + separator + run.getNumber() + separator;
       boolean exists = lines.stream().anyMatch(line -> line.startsWith(lineMatch));
       if (!exists) {
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(indexFile, true), StandardCharsets.UTF_8))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(indexFile, StandardCharsets.UTF_8, true))) {
           writeLine(writer, run);
           writer.newLine();
         } catch (IOException e) {
@@ -147,7 +142,7 @@ public class BuildHistoryFileManager {
     synchronized (lock) {
       List<String> indexLines = readIndexFile(nodeName, storageDir);
       File indexFile = new File(storageDir + "/" + nodeName + "_index.txt");
-      try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(indexFile), StandardCharsets.UTF_8))) {
+      try (BufferedWriter writer = new BufferedWriter(new FileWriter(indexFile, StandardCharsets.UTF_8))) {
         for (String line : indexLines) {
           if (!line.startsWith(runIdentifier)) {
             writer.write(line);
@@ -166,7 +161,7 @@ public class BuildHistoryFileManager {
       Object lock = getNodeLock(nodeName);
       synchronized (lock) {
         List<String> indexLines = readIndexFile(nodeName, storageDir);
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(storageDir + "/" + nodeName + "_index.txt"), StandardCharsets.UTF_8))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(storageDir + "/" + nodeName + "_index.txt", StandardCharsets.UTF_8))) {
           for (String line : indexLines) {
             if (!line.startsWith(jobName + separator)) {
               writer.write(line);
@@ -209,7 +204,7 @@ public class BuildHistoryFileManager {
       Object lock = getNodeLock(nodeName);
       synchronized (lock) {
         List<String> indexLines = readIndexFile(nodeName, storageDir);
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(storageDir + "/" + nodeName + "_index.txt"), StandardCharsets.UTF_8))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(storageDir + "/" + nodeName + "_index.txt", StandardCharsets.UTF_8))) {
           for (String line : indexLines) {
             if (line.startsWith(oldFullName + separator)) {
               writer.write(newFullName + line.substring(oldFullName.length()));
