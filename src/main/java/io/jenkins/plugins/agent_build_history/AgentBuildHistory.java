@@ -96,7 +96,7 @@ public class AgentBuildHistory implements Action {
     List<String> indexLines = BuildHistoryFileManager.readIndexFile(computer.getName(), AgentBuildHistoryConfig.get().getStorageDir());
 
     String uri = req.getRequestURI();
-    if (!uri.endsWith("/api/")) {
+    if (!uri.endsWith("/api/") && !uri.endsWith("/" + getUrlName() + "/")) {
       runListTable.setRuns(getExecutionsForNode(indexLines, computer.getName(), page, pageSize, "startTime", "desc", statusFilter));
       runListTable.compute();
     }

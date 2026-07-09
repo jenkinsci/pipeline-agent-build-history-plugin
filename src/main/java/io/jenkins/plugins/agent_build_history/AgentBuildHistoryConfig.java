@@ -28,7 +28,7 @@ public class AgentBuildHistoryConfig extends GlobalConfiguration {
   private void ensureStorageDir() {
     File storageDirectory = new File(storageDir);
     if (!storageDirectory.exists()) {
-      LOGGER.info("Creating storage directory at " + storageDir);
+      LOGGER.finer("Creating storage directory at " + storageDir);
       try {
         boolean created = storageDirectory.mkdirs();
         if (!created) {
@@ -38,7 +38,7 @@ public class AgentBuildHistoryConfig extends GlobalConfiguration {
         LOGGER.log(Level.SEVERE, "SecurityException: Insufficient permissions to create directory at " + storageDir, e);
       }
     } else {
-      LOGGER.info("Storage directory already exists at " + storageDir);
+      LOGGER.finer("Storage directory already exists at " + storageDir);
     }
   }
 
