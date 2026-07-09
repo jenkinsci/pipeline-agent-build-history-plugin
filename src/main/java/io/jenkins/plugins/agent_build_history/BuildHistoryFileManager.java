@@ -1,5 +1,6 @@
 package io.jenkins.plugins.agent_build_history;
 
+import hudson.model.Node;
 import hudson.model.Result;
 import hudson.model.Run;
 import java.io.BufferedWriter;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
 public class BuildHistoryFileManager {
@@ -92,18 +94,21 @@ public class BuildHistoryFileManager {
         action.addAgent(nodeName);
       }
     }
-    synchronized (lock) {
-      // Update index for the node
-      File indexFile = new File(storageDir + "/" + nodeName + "_index" + ".txt");
-      List<String> lines = readIndexFile(nodeName, storageDir);
-      String lineMatch = run.getParent().getFullName() + separator + run.getNumber() + separator;
-      boolean exists = lines.stream().anyMatch(line -> line.startsWith(lineMatch));
-      if (!exists) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(indexFile, StandardCharsets.UTF_8, true))) {
-          writeLine(writer, run);
-          writer.newLine();
-        } catch (IOException e) {
-          LOGGER.log(Level.WARNING, "Failed to update index for node " + nodeName, e);
+    Node node = Jenkins.get().getNode(nodeName);
+    if (node != null) {
+      synchronized (lock) {
+        // Update index for the node
+        File indexFile = new File(storageDir + "/" + nodeName + "_index" + ".txt");
+        List<String> lines = readIndexFile(nodeName, storageDir);
+        String lineMatch = run.getParent().getFullName() + separator + run.getNumber() + separator;
+        boolean exists = lines.stream().anyMatch(line -> line.startsWith(lineMatch));
+        if (!exists) {
+          try (BufferedWriter writer = new BufferedWriter(new FileWriter(indexFile, StandardCharsets.UTF_8, true))) {
+            writeLine(writer, run);
+            writer.newLine();
+          } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Failed to update index for node " + nodeName, e);
+          }
         }
       }
     }
