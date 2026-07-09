@@ -51,7 +51,7 @@ public class WorkflowJobHistoryAction implements Action {
         req.getParameter("agentFilter"), Utils.getRequestInteger(req, "startBuild", -1),
         Utils.getRequestInteger(req, "limit", 100));
     String uri = req.getRequestURI();
-    if (!uri.endsWith("/api/")) {
+    if (!uri.endsWith("/api/") && !uri.endsWith("/" + getUrlName() + "/")) {
       handler.compute();
     }
     return new Api(handler);
