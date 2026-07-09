@@ -280,7 +280,11 @@ public class AgentBuildHistory implements Action {
               StepDescriptor descriptor = startNode.getDescriptor();
               if (descriptor instanceof ExecutorStep.DescriptorImpl) {
                 String nodeName = action.getNode();
-                BuildHistoryFileManager.addRunToNodeIndex(nodeName, run, AgentBuildHistoryConfig.get().getStorageDir());
+                Node node = Jenkins.get().getNode(nodeName);
+                // empty node name means it was run on built-in
+                if (nodeName.isBlank() || node != null) {
+                  BuildHistoryFileManager.addRunToNodeIndex(nodeName, run, AgentBuildHistoryConfig.get().getStorageDir());
+                }
               }
             }
           }
