@@ -109,7 +109,7 @@ public class AgentBuildHistoryListeners {
     public void taskStarted(Executor executor, Queue.Task task) {
       Queue.Executable executable = executor.getCurrentExecutable();
       Computer c = executor.getOwner();
-      if (executable instanceof Run<?, ?> run) {
+      if (executable instanceof Run<?, ?> run && !(executable instanceof WorkflowRun)) {
         LOGGER.log(Level.FINER, () -> "Starting Job: " + run.getFullDisplayName() + " on " + c.getName());
         AgentBuildHistory.startJobExecution(c, run);
       } else if (task instanceof ExecutorStepExecution.PlaceholderTask pht) {
