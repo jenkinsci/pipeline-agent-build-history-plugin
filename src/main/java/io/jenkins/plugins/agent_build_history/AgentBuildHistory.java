@@ -11,6 +11,9 @@ import hudson.model.Result;
 import hudson.model.Run;
 import hudson.util.RunList;
 import jakarta.servlet.http.Cookie;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -258,8 +261,15 @@ public class AgentBuildHistory implements Action {
     return execution;
   }
 
-  private static void load() {
-    LOGGER.log(Level.INFO, () -> "Starting to synchronize all runs");
+  private static synchronized void load() {
+    String storageDir = AgentBuildHistoryConfig.get().getStorageDir();
+    File marker = new File(storageDir + File.separator + "loaded.marker");
+    if (marker.exists()) {
+      LOGGER.log(Level.FINER, () -> "Loading marker file found, skipping synchronization of runs");
+      loadingComplete = true;
+      return;
+    }
+    LOGGER.log(Level.FINER, () -> "Starting to synchronize all runs");
     RunList<Run<?, ?>> runList = RunList.fromJobs((Iterable) Jenkins.get().allItems(Job.class));
     runList.forEach(run -> {
       LOGGER.finer("Loading run " + run.getFullDisplayName());
@@ -292,7 +302,12 @@ public class AgentBuildHistory implements Action {
       }
     });
     loadingComplete = true;
-    LOGGER.log(Level.INFO, () -> "Synchronizing all runs complete");
+    try {
+      Files.createFile(marker.toPath());
+    } catch (IOException e) {
+      LOGGER.log(Level.WARNING, () -> "Failed to create marker file.");
+    }
+    LOGGER.log(Level.FINER, () -> "Synchronizing all runs complete");
   }
 
   public static void startJobExecution(Computer c, Run<?, ?> run) {
